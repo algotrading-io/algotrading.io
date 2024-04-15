@@ -5,11 +5,12 @@ from time import time
 from jose import jwk, jwt
 from jose.utils import base64url_decode
 
-region = os.environ['REGION']
-user_pool_id = os.environ['USER_POOL_ID']
-web_client_id = os.environ['WEB_CLIENT_ID']
-keys_url = f'https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/jwks.json'
-keys = requests.get(keys_url).json()['keys']
+if os.environ.get('LOCAL') != 'true':
+    region = os.environ['REGION']
+    user_pool_id = os.environ['USER_POOL_ID']
+    web_client_id = os.environ['WEB_CLIENT_ID']
+    keys_url = f'https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/jwks.json'
+    keys = requests.get(keys_url).json()['keys']
 
 
 def verify_token(event):

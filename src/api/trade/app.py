@@ -12,15 +12,15 @@ from collections import defaultdict
 import robin_stocks.robinhood as rh
 from datetime import datetime, timedelta
 from botocore.exceptions import ClientError
-from utils import \
-    verify_user, options, error, str_to_bool
-from auth import verify_token
+# may need to do if os.environ.get("LOCAL").lower() == "true":
+from src.api.shared.python.utils import (
+    verify_user, options, error, str_to_bool)
+from src.api.shared.python.auth import verify_token
+# from utils import \
+#     verify_user, options, error, str_to_bool
+# from auth import verify_token
 
 s3 = boto3.resource('s3')
-# region = os.env.get('REGION')
-# userpool_id = os.env.get('USER_POOL_ID')
-# keys_url = f'https://cognito-idp.{region}.amazonaws.com/{userpool_id}/.well-known/jwks.json'
-# keys = requests.get(keys_url).json()['keys']
 
 
 def calc_d1(stock_price, strike_price, implied_vol, rho, div_yield, time):
@@ -205,11 +205,14 @@ def get_expirations(expirations, num=2):
     return exp_candidates
 
 
-def get_contracts(symbol, expiration, num=2):
+def get_contracts(symbol, expiration, curr_price, num=2):
     min_price = 0.05
     key = 'high_fill_rate_sell_price'
     opt_candidates = rh.options.find_options_by_specific_profitability(
         symbol, expiration, None, 'call', 'chance_of_profit_short', 0.85, 0.95)
+
+    opt_candidates = filter(lambda x: float(
+        x['strike_price'] > curr_price), opt_candidates)
     opt_candidates.sort(key=lambda opt: abs(
         float(opt['chance_of_profit_short']) - 0.88))
     contracts = [opt for opt in opt_candidates if (
@@ -238,6 +241,10 @@ def update_contract(symbol, lookup):
     return lookup
 
 
+def delay():
+    sleep(random() * 5 + 5)
+
+
 class Trade:
     # curr[x, y, z]
     # x is expiration index
@@ -251,7 +258,7 @@ class Trade:
             orders = self.execute_orders(lookup, results)
 
             # wait 5-10 sec
-            sleep(random() * 5 + 5)
+            delay()
 
             lookup, results = self.adjust_orders(orders, lookup, results)
         return results
@@ -273,18 +280,27 @@ class Sell(Trade):
     def init_chain(self, symbols):
         desired_contracts = suggest_num_contracts()
         # only use symbols that have positions available
-        symbols = filter(lambda symbol: desired_contracts[symbol], symbols)
-        lookup = {symbol: {'quantity': desired_contracts[symbol], 'curr': [
-            0, 0, 0]} for symbol in symbols}
+        symbols = list(
+            filter(lambda symbol: desired_contracts[symbol], symbols))
+        prices = rh.stocks.get_latest_price(symbols)
+        lookup = {
+            symbol: {
+                'quantity': desired_contracts[symbol],
+                'curr': [0, 0, 0],
+                'price': prices[symbol]
+            } for symbol in symbols
+        }
 
         for symbol in lookup:
             chain = rh.options.get_chains(symbol)
+            price = lookup[symbol]['price']
             expirations = chain['expiration_dates']
             expirations = get_expirations(expirations)
             print('expirations', expirations)
             lookup[symbol]['expirations'] = expirations
             # maybe turn these two lines into a fx called update_contracts and run before every trade attempt
-            contracts = [get_contracts(symbol, exp) for exp in expirations]
+            contracts = [get_contracts(symbol, exp, price)
+                         for exp in expirations]
             lookup[symbol]['contracts'] = contracts
         return lookup
 
@@ -342,7 +358,7 @@ class Sell(Trade):
         remaining = filter(lambda symbol: symbol not in results,
                            list(lookup.keys()))
         orders = {}
-        for symbol in remaining:
+        for idx, symbol in enumerate(remaining):
             option = lookup[symbol]
             curr = option['curr']
             expiration = option['expirations'][curr[0]]
@@ -360,6 +376,8 @@ class Sell(Trade):
                 orders[symbol] = order
             else:
                 orders[symbol] = {'state': 'cancelled'}
+            if idx == len(remaining) - 1:
+                delay()
         return orders
 
 
@@ -444,7 +462,7 @@ class Buy(Trade):
         remaining = filter(lambda symbol: symbol not in results,
                            list(lookup.keys()))
         orders = {}
-        for symbol in remaining:
+        for idx, symbol in enumerate(remaining):
             option = lookup[symbol]
             quantity = option['quantity']
             expiration = option['expiration']
@@ -456,6 +474,8 @@ class Buy(Trade):
             )
             print('Order:', json.dumps(order))
             orders[symbol] = order
+            if idx == len(remaining) - 1:
+                delay()
         return orders
 
 
@@ -465,7 +485,7 @@ def roll_out(symbols):
     buy_results = trade.execute(symbols)
     trade = SellOut()
     sell_results = trade.execute(symbols, buy_results)
-    # return sell minus buy results
+    # TODO: return sell minus buy results
     return sell_results
 
 
@@ -475,7 +495,7 @@ def roll_in(symbols):
     buy_results = trade.execute(symbols)
     trade = SellIn()
     sell_results = trade.execute(symbols, buy_results)
-    # return sell minus buy results
+    # TODO: return sell minus buy results
     return sell_results
 
 
