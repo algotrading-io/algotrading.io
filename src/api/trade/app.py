@@ -358,8 +358,7 @@ class Sell(Trade):
         return lookup, results
 
     def execute_orders(self, lookup, results):
-        remaining = filter(lambda symbol: symbol not in results,
-                           list(lookup.keys()))
+        remaining = [symbol for symbol in lookup if symbol not in results]
         orders = {}
         for idx, symbol in enumerate(remaining):
             option = lookup[symbol]
@@ -462,8 +461,7 @@ class Buy(Trade):
         return lookup, _
 
     def execute_orders(self, lookup, results):
-        remaining = filter(lambda symbol: symbol not in results,
-                           list(lookup.keys()))
+        remaining = [symbol for symbol in lookup if symbol not in results]
         orders = {}
         for idx, symbol in enumerate(remaining):
             option = lookup[symbol]
