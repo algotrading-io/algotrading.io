@@ -210,9 +210,12 @@ def get_contracts(symbol, expiration, curr_price, num=2):
     key = 'high_fill_rate_sell_price'
     opt_candidates = rh.options.find_options_by_specific_profitability(
         symbol, expiration, None, 'call', 'chance_of_profit_short', 0.85, 0.95)
+    # only use options that with a strike price above current stock price
+    opt_candidates = [
+        opt for opt in opt_candidates
+        if float(opt['strike_price']) > curr_price
+    ]
 
-    opt_candidates = filter(lambda x: float(
-        x['strike_price'] > curr_price), opt_candidates)
     opt_candidates.sort(key=lambda opt: abs(
         float(opt['chance_of_profit_short']) - 0.88))
     contracts = [opt for opt in opt_candidates if (
@@ -280,8 +283,8 @@ class Sell(Trade):
     def init_chain(self, symbols):
         desired_contracts = suggest_num_contracts()
         # only use symbols that have positions available
-        symbols = list(
-            filter(lambda symbol: desired_contracts[symbol], symbols))
+        symbols = [symbol for symbol,
+                   num_contracts in desired_contracts.items() if num_contracts]
         prices = rh.stocks.get_latest_price(symbols)
         lookup = {
             symbol: {
