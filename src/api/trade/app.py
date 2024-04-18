@@ -12,13 +12,14 @@ from collections import defaultdict
 import robin_stocks.robinhood as rh
 from datetime import datetime, timedelta
 from botocore.exceptions import ClientError
-# may need to do if os.environ.get("LOCAL").lower() == "true":
-from src.api.shared.python.utils import (
-    verify_user, options, error, str_to_bool)
-from src.api.shared.python.auth import verify_token
-# from utils import \
-#     verify_user, options, error, str_to_bool
-# from auth import verify_token
+if str(os.environ.get("LOCAL")).lower() == "true":
+    from src.api.shared.python.utils import (
+        verify_user, options, error, str_to_bool)
+    from src.api.shared.python.auth import verify_token
+else:
+    from utils import \
+        verify_user, options, error, str_to_bool
+    from auth import verify_token
 
 s3 = boto3.resource('s3')
 
