@@ -8,6 +8,7 @@ import { Pie } from '@ant-design/charts';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import layoutStyles from "@/layouts/index.module.less";
 import subStyles from "@/pages/subscription/index.module.less";
+import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 
 
 const isLocal = getEnvironment() === "local";
@@ -24,6 +25,7 @@ const TradePage = () => {
   const [tradeLoading, setTradeLoading] = useState({ [variantLabels.DEF]: new Set(), [variantLabels.VAR]: new Set() });
   const [toggle, setToggle] = useState(false);
   const [variant, setVariant] = useState(0);
+  // const
   const toggleLabels = { OPTIONS: "OPT", STOCKS: "STX" };
   // const [message, setMessage] = useState({});
 
@@ -237,7 +239,7 @@ const TradePage = () => {
           loading={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
           disabled={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
         >
-          {holding.open_contracts ? 'BUY' : 'SELL'}
+          {holding.open_contracts ? <PlusOutlined /> : <MinusOutlined />}
         </Button>
     })
     // add chart for premium income per week
