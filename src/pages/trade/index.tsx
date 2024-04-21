@@ -28,6 +28,7 @@ const TradePage = () => {
   const [queue, setQueue] = useState(new Set())
   const [direction, setDirection] = useState(false)
   const toggleLabels = { OPTIONS: "OPT", STOCKS: "STX" };
+  const [emptyQueue, setEmptyQueue] = useState(true);
   // const [message, setMessage] = useState({});
 
   // instead of selling or buying when press sell or buy, add to queue
@@ -138,12 +139,16 @@ const TradePage = () => {
     }
   }, [message]);
   const handleQueue = (holding) => {
-    const holdingDir = Boolean(holding.open_contracts)
-    const queueIsEmpty = queue.size === 0
+    const holdingDir = Boolean(holding.open_contracts);
+    const queueIsEmpty = queue.size === 0;
     if (queue.has(holding.symbol)) {
+      if (queue.size === 1) {
+        setEmptyQueue(true);
+      }
       setQueue(prev => prev.delete(holding.symbol) ? prev : prev);
     } else if (direction === holdingDir || queueIsEmpty) {
-      setQueue(queue.add(holding.symbol))
+      setEmptyQueue(false);
+      setQueue(prev => prev.add(holding.symbol))
     }
     setDirection(queueIsEmpty ? holdingDir : direction)
 
@@ -244,16 +249,19 @@ const TradePage = () => {
       }
     }),
     createColumn({
-      displayName: 'Action', render: (holding) =>
-        <Button
+      displayName: 'Action', render: (holding) => {
+        // console.log('holding', holding);
+        console.log(holding.symbol, queue.size && direction !== Boolean(holding.open_contracts));
+        return (<Button
           className={holding.open_contracts ? layoutStyles.start : subStyles.subscribe}
           onClick={() => handleQueue(holding)}
           // loading={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
           // disabled={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
-          disabled={queue.size && direction !== Boolean(holding.open_contracts)}
+          disabled={Boolean(!emptyQueue && direction !== Boolean(holding.open_contracts))}
         >
           {holding.open_contracts ? <PlusOutlined /> : <MinusOutlined />}
-        </Button>
+        </Button>)
+      }
     })
     // add chart for premium income per week
     // include dividend income on chart - area chart
