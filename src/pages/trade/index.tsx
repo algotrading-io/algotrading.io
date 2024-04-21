@@ -110,35 +110,6 @@ const TradePage = () => {
           setTradeLoading(prev => prev[selector].delete(symbol) ? prev : prev);
         }
       })
-
-      // if ('error' in data[holding.symbol]) {
-      //   renderError();
-      // } else {
-      //   // this is for sell req,
-      //   // make for buy req too!
-      //   notification.success({
-      //     duration: 10,
-      //     message: <span style={{ display: 'flex', justifyContent: 'space-between' }}><span>Success</span><span style={{ color: 'lime', fontWeight: 'bold' }}>+ ${parseFloat(data[holding.symbol].premium).toFixed(0)}</span></span>,
-      //     description: `Executed order for ${holding.symbol}!`,
-      //   });
-
-      //   setPortfolio(prev => [
-      //     ...(prev.slice(0, variant).length === 1 ? [prev.slice(0, variant)] : prev.slice(0, variant)),
-      //     prev[variant].map(p =>
-      //       p.symbol === holding.symbol ?
-      //         ({
-      //           ...p,
-      //           ...{
-      //             open_contracts: holding.open_contracts - parseInt(data[holding.symbol].quantity),
-      //             expiration: data[holding.symbol].legs[0].expiration_date,
-      //             strike: parseFloat(data[holding.symbol].legs[0].strike_price),
-      //             chance: 0.88
-      //           }
-      //         }) : p
-      //     ),
-      //     ...(prev.slice(variant + 1).length === 1 ? [prev.slice(variant + 1)] : prev.slice(variant + 1))
-      //   ])
-
     }
   }, [message]);
   const handleQueue = (holding) => {
