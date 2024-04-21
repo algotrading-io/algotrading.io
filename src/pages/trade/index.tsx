@@ -143,14 +143,15 @@ const TradePage = () => {
     const queueIsEmpty = queue.size === 0;
     if (queue.has(holding.symbol)) {
       if (queue.size === 1) {
-        setEmptyQueue(true);
+        // setEmptyQueue(true);
       }
       setQueue(prev => prev.delete(holding.symbol) ? prev : prev);
     } else if (direction === holdingDir || queueIsEmpty) {
-      setEmptyQueue(false);
+      // setEmptyQueue(false);
       setQueue(prev => prev.add(holding.symbol))
     }
     setDirection(queueIsEmpty ? holdingDir : direction)
+    setEmptyQueue(queue.size === 0)
 
     console.log('queue', queue);
   };
@@ -251,7 +252,7 @@ const TradePage = () => {
     createColumn({
       displayName: 'Action', render: (holding) => {
         // console.log('holding', holding);
-        console.log(holding.symbol, queue.size && direction !== Boolean(holding.open_contracts));
+        // console.log(holding.symbol, queue.size && direction !== Boolean(holding.open_contracts));
         return (<Button
           className={holding.open_contracts ? layoutStyles.start : subStyles.subscribe}
           onClick={() => handleQueue(holding)}
