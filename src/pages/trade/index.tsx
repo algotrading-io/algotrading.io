@@ -27,10 +27,6 @@ const TradePage = () => {
   const toggleLabels = { OPTIONS: "OPT", STOCKS: "STX" };
   // const [message, setMessage] = useState({});
 
-  // fix default sorting by expiration and then num contracts
-  // rn facing an issue in which v soon expiration does not show up on first page if num contracts is high
-  // (more than 1 contract sold aka <- 1)
-
   // instead of selling or buying when press sell or buy, add to queue
   // add Execute button that executes the queue
   // this fixes too many requests issue and websocket issue
@@ -224,7 +220,11 @@ const TradePage = () => {
       dataName: 'expiration', sort: {
         defaultSortOrder: 'ascend', sorter: {
           compare: (a, b) => {
-            Date.parse(a.expiration) - Date.parse(b.expiration)
+            let { expiration: d1 } = a;
+            let { expiration: d2 } = b;
+            d1 = d1 ? Date.parse(d1) : Date.now()
+            d2 = d2 ? Date.parse(d2) : Date.now()
+            return d1 - d2;
           }
         }
       }
@@ -239,7 +239,6 @@ const TradePage = () => {
         >
           {holding.open_contracts ? 'BUY' : 'SELL'}
         </Button>
-      , sort: { defaultSortOrder: 'descend', sorter: { compare: (a, b) => a.open_contracts === 0, multiple: 2 } }
     })
     // add chart for premium income per week
     // include dividend income on chart - area chart
