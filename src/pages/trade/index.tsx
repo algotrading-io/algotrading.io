@@ -26,10 +26,12 @@ const TradePage = () => {
   const [tradeLoading, setTradeLoading] = useState({ [variantLabels.DEF]: new Set(), [variantLabels.VAR]: new Set() });
   const [toggle, setToggle] = useState(false);
   const [variant, setVariant] = useState(0);
-  const [queue, setQueue] = useState(new Set())
+  const [queue, setQueue] = useState({ [variantLabels.DEF]: new Set(), [variantLabels.VAR]: new Set() });
   const [direction, setDirection] = useState(false)
   const toggleLabels = { OPTIONS: "OPT", STOCKS: "STX" };
   const [, forceUpdate] = useReducer(x => x + 1, 0);
+  const selector = variant ? variantLabels.VAR : variantLabels.DEF;
+
   // const [message, setMessage] = useState({});
 
   // instead of selling or buying when press sell or buy, add to queue
@@ -105,7 +107,7 @@ const TradePage = () => {
             ),
             ...(prev.slice(variant + 1).length === 1 ? [prev.slice(variant + 1)] : prev.slice(variant + 1))
           ])
-          setTradeLoading(prev => prev[variant ? variantLabels.VAR : variantLabels.DEF].delete(symbol) ? prev : prev);
+          setTradeLoading(prev => prev[selector].delete(symbol) ? prev : prev);
         }
       })
 
@@ -141,11 +143,11 @@ const TradePage = () => {
   }, [message]);
   const handleQueue = (holding) => {
     const holdingDir = Boolean(holding.open_contracts);
-    const queueIsEmpty = queue.size === 0;
-    if (queue.has(holding.symbol)) {
-      setQueue(prev => prev.delete(holding.symbol) ? prev : prev);
+    const queueIsEmpty = queue[selector].size === 0;
+    if (queue[selector].has(holding.symbol)) {
+      setQueue(prev => prev[selector].delete(holding.symbol) ? prev : prev);
     } else if (direction === holdingDir || queueIsEmpty) {
-      setQueue(prev => prev.add(holding.symbol))
+      setQueue(prev => prev[selector].add(holding.symbol) ? prev : prev);
     }
     setDirection(queueIsEmpty ? holdingDir : direction)
     forceUpdate();
@@ -153,7 +155,7 @@ const TradePage = () => {
   };
   // getting added to wrong set in tradeLoading (variant instead of default)
   // const trade = async (holding) => {
-  //   setTradeLoading(prev => prev[variant ? variantLabels.VAR : variantLabels.DEF].add(holding.symbol) && prev);
+  //   setTradeLoading(prev => prev[selector].add(holding.symbol) && prev);
   //   const renderError = () => notification.error({
   //     duration: 10,
   //     message: "Failure",
@@ -208,7 +210,7 @@ const TradePage = () => {
   //     console.error(e);
   //     renderError()
   //   }
-  //   // setTradeLoading(prev => prev[variant ? variantLabels.DEF : variantLabels.VAR].delete(holding.symbol) ? prev : prev);
+  //   // setTradeLoading(prev => prev[selector].delete(holding.symbol) ? prev : prev);
   // }
 
   const columns = toggle ? [
@@ -248,11 +250,11 @@ const TradePage = () => {
     createColumn({
       displayName: 'Action', render: (holding) =>
         <Button
-          className={queue.has(holding.symbol) ? tradeStyles.selected : (holding.open_contracts ? layoutStyles.start : subStyles.subscribe)}
+          className={queue[selector].has(holding.symbol) ? tradeStyles.selected : (holding.open_contracts ? layoutStyles.start : subStyles.subscribe)}
           onClick={() => handleQueue(holding)}
-          loading={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
-          // disabled={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
-          disabled={Boolean(queue.size && direction !== Boolean(holding.open_contracts))}
+          loading={tradeLoading[selector].has(holding.symbol)}
+          // disabled={tradeLoading[selector].has(holding.symbol)}
+          disabled={Boolean(queue[selector].size && direction !== Boolean(holding.open_contracts))}
         >
           {holding.open_contracts ? <PlusOutlined /> : <MinusOutlined />}
         </Button>
@@ -382,7 +384,7 @@ const TradePage = () => {
           style={{ marginBottom: '19px', height: '100%', alignSelf: 'center' }}>
           <Button
             // change disabled to reference var as well
-            disabled={!queue.size}
+            disabled={!queue[selector].size}
             className={subStyles.subscribe}
           // add loading
           >
