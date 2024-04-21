@@ -246,17 +246,16 @@ const TradePage = () => {
       }
     }),
     createColumn({
-      displayName: 'Action', render: (holding) => {
-        return (<Button
+      displayName: 'Action', render: (holding) =>
+        <Button
           className={queue.has(holding.symbol) ? tradeStyles.selected : (holding.open_contracts ? layoutStyles.start : subStyles.subscribe)}
           onClick={() => handleQueue(holding)}
-          // loading={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
+          loading={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
           // disabled={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
           disabled={Boolean(queue.size && direction !== Boolean(holding.open_contracts))}
         >
           {holding.open_contracts ? <PlusOutlined /> : <MinusOutlined />}
-        </Button>)
-      }
+        </Button>
     })
     // add chart for premium income per week
     // include dividend income on chart - area chart
@@ -377,7 +376,20 @@ const TradePage = () => {
   // include dividend income on chart - area chart
   return (
     <>
-      <Title>Portfolio</Title>
+      <span style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Title>Portfolio</Title>
+        <span
+          style={{ marginBottom: '19px', height: '100%', alignSelf: 'center' }}>
+          <Button
+            // change disabled to reference var as well
+            disabled={!queue.size}
+            className={subStyles.subscribe}
+          // add loading
+          >
+            <b>EXECUTE</b>
+          </Button>
+        </span>
+      </span>
       <span style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
         <Toggle
           val={!variant}
