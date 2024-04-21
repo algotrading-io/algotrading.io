@@ -139,22 +139,16 @@ const TradePage = () => {
   }, [message]);
   const handleQueue = (holding) => {
     const holdingDir = Boolean(holding.open_contracts)
-    if (queue.size === 0) {
-      setQueue(queue.add(holding.symbol))
-      setDirection(holdingDir)
-    } else if (queue.has(holding.symbol)) {
-      // if (queue.size === 1) {
-      //   setDirection(false);
-      // }
-      setQueue(prev => {
-        prev.delete(holding.symbol);
-        return prev;
-      });
-    } else if (direction === holdingDir) {
+    const queueIsEmpty = queue.size === 0
+    if (queue.has(holding.symbol)) {
+      setQueue(prev => prev.delete(holding.symbol) ? prev : prev);
+    } else if (direction === holdingDir || queueIsEmpty) {
       setQueue(queue.add(holding.symbol))
     }
+    setDirection(queueIsEmpty ? holdingDir : direction)
+
+    console.log('queue', queue);
   };
-  console.log('queue', queue);
   // getting added to wrong set in tradeLoading (variant instead of default)
   // const trade = async (holding) => {
   //   setTradeLoading(prev => prev[variant ? variantLabels.VAR : variantLabels.DEF].add(holding.symbol) && prev);
@@ -256,7 +250,7 @@ const TradePage = () => {
           onClick={() => handleQueue(holding)}
           // loading={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
           // disabled={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
-          disabled={queue.size && direction === Boolean(holding.open_contracts)}
+          disabled={queue.size && direction !== Boolean(holding.open_contracts)}
         >
           {holding.open_contracts ? <PlusOutlined /> : <MinusOutlined />}
         </Button>
