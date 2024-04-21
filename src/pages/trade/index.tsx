@@ -1,5 +1,5 @@
 import { Typography, Table, Button, notification } from "antd";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useReducer } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 const { Title } = Typography;
@@ -8,6 +8,7 @@ import { Pie } from '@ant-design/charts';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import layoutStyles from "@/layouts/index.module.less";
 import subStyles from "@/pages/subscription/index.module.less";
+import tradeStyles from "./index.module.less";
 import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 
 
@@ -29,6 +30,7 @@ const TradePage = () => {
   const [direction, setDirection] = useState(false)
   const toggleLabels = { OPTIONS: "OPT", STOCKS: "STX" };
   const [emptyQueue, setEmptyQueue] = useState(true);
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
   // const [message, setMessage] = useState({});
 
   // instead of selling or buying when press sell or buy, add to queue
@@ -148,6 +150,8 @@ const TradePage = () => {
     }
     setDirection(queueIsEmpty ? holdingDir : direction)
     setEmptyQueue(queue.size === 0)
+    forceUpdate();
+    console.log('queue', queue);
   };
   // getting added to wrong set in tradeLoading (variant instead of default)
   // const trade = async (holding) => {
@@ -246,7 +250,7 @@ const TradePage = () => {
     createColumn({
       displayName: 'Action', render: (holding) => {
         return (<Button
-          className={holding.open_contracts ? layoutStyles.start : subStyles.subscribe}
+          className={queue.has(holding.symbol) ? tradeStyles.selected : (holding.open_contracts ? layoutStyles.start : subStyles.subscribe)}
           onClick={() => handleQueue(holding)}
           // loading={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
           // disabled={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
