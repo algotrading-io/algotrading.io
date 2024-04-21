@@ -25,7 +25,8 @@ const TradePage = () => {
   const [tradeLoading, setTradeLoading] = useState({ [variantLabels.DEF]: new Set(), [variantLabels.VAR]: new Set() });
   const [toggle, setToggle] = useState(false);
   const [variant, setVariant] = useState(0);
-  // const
+  const [queue, setQueue] = useState(new Set())
+  const [direction, setDirection] = useState(false)
   const toggleLabels = { OPTIONS: "OPT", STOCKS: "STX" };
   // const [message, setMessage] = useState({});
 
@@ -136,66 +137,83 @@ const TradePage = () => {
 
     }
   }, [message]);
-  console.log('tradeLoading', tradeLoading);
-  // getting added to wrong set in tradeLoading (variant instead of default)
-  const sell = async (holding) => {
-    setTradeLoading(prev => prev[variant ? variantLabels.VAR : variantLabels.DEF].add(holding.symbol) && prev);
-    const renderError = () => notification.error({
-      duration: 10,
-      message: "Failure",
-      description: `Failed to execute order for ${holding.symbol}.`,
-    });
-    const token = loggedIn?.signInUserSession?.idToken?.jwtToken;
-    // const url = `${getApiUrl({ localOverride: "dev" })}/trade?variant=${Boolean(variant)}`;
-    try {
-      sendMessage({ token, type: holding.open_contracts ? 'BUY' : 'SELL', symbols: [holding.symbol], variant });
-      // const response = await fetch(url, { method: "POST", headers: { Authorization: jwtToken }, body: JSON.stringify({ type: holding.open_contracts ? 'BUY' : 'SELL', symbols: [holding.symbol] }) });
-      // const data = await response.json();
-      // console.log('data', typeof data, data);
-      // console.log('data keys', Object.keys(data));
-      //   {
-      //     "statusCode": 200,
-      //     "body": "{\"CVNA\": {\"account_number\": \"5QV38413\", \"cancel_url\": null, \"canceled_quantity\": \"0.00000\", \"created_at\": \"2023-12-22T20:01:47.326521Z\", \"direction\": \"debit\", \"id\": \"6585eb2b-9a21-4644-bfef-08da04aa6d4a\", \"legs\": [{\"executions\": [{\"id\": \"6585eb2b-5f6b-4623-b040-93a3763058ce\", \"price\": \"1.94000000\", \"quantity\": \"1.00000\", \"settlement_date\": \"2023-12-26\", \"timestamp\": \"2023-12-22T20:01:47.874000Z\"}], \"id\": \"6585eb2b-bbd4-42a6-9fb2-1a3ca7421173\", \"option\": \"https://api.robinhood.com/options/instruments/fbb52868-43b2-4316-86f1-9a48754d5f8f/\", \"position_effect\": \"close\", \"ratio_quantity\": 1, \"side\": \"buy\", \"expiration_date\": \"2023-12-22\", \"strike_price\": \"54.0000\", \"option_type\": \"call\", \"long_strategy_code\": \"fbb52868-43b2-4316-86f1-9a48754d5f8f_L1\", \"short_strategy_code\": \"fbb52868-43b2-4316-86f1-9a48754d5f8f_S1\"}], \"pending_quantity\": \"0.00000\", \"premium\": \"194.00000000\", \"processed_premium\": \"194\", \"net_amount\": \"194.03\", \"net_amount_direction\": \"debit\", \"price\": \"1.94000000\", \"processed_quantity\": \"1.00000\", \"quantity\": \"1.00000\", \"ref_id\": \"99e74494-af70-40a6-a0a4-04ec19cf8dcc\", \"regulatory_fees\": \"0.03\", \"state\": \"filled\", \"time_in_force\": \"gtc\", \"trigger\": \"immediate\", \"type\": \"limit\", \"updated_at\": \"2023-12-22T20:01:48.464649Z\", \"chain_id\": \"99954490-bfc1-4590-9cf7-19f7e8ca916d\", \"chain_symbol\": \"CVNA\", \"response_category\": null, \"opening_strategy\": null, \"closing_strategy\": \"short_call\", \"stop_price\": null, \"form_source\": null, \"client_bid_at_submission\": null, \"client_ask_at_submission\": null, \"client_time_at_submission\": null, \"average_net_premium_paid\": \"194.00000000\", \"estimated_total_net_amount\": \"194.03\", \"estimated_total_net_amount_direction\": \"debit\"}}",
-      //     "headers": {
-      //         "Access-Control-Allow-Origin": "*"
-      //     }
+  const handleQueue = (holding) => {
+    const holdingDir = Boolean(holding.open_contracts)
+    if (queue.size === 0) {
+      setQueue(queue.add(holding.symbol))
+      setDirection(holdingDir)
+    } else if (queue.has(holding.symbol)) {
+      // if (queue.size === 1) {
+      //   setDirection(false);
       // }
-      // buy result is putting statusCode body and headers all in body - fix in api
-
-      // if ('error' in data[holding.symbol]) {
-      //   renderError();
-      // } else {
-      //   // this is for sell req,
-      //   // make for buy req too!
-      //   notification.success({
-      //     duration: 10,
-      //     message: <span style={{ display: 'flex', justifyContent: 'space-between' }}><span>Success</span><span style={{ color: 'lime', fontWeight: 'bold' }}>+ ${parseFloat(data[holding.symbol].premium).toFixed(0)}</span></span>,
-      //     description: `Executed order for ${holding.symbol}!`,
-      //   });
-
-      //   setPortfolio(prev => [
-      //     ...(prev.slice(0, variant).length === 1 ? [prev.slice(0, variant)] : prev.slice(0, variant)),
-      //     prev[variant].map(p =>
-      //       p.symbol === holding.symbol ?
-      //         ({
-      //           ...p,
-      //           ...{
-      //             open_contracts: holding.open_contracts - parseInt(data[holding.symbol].quantity),
-      //             expiration: data[holding.symbol].legs[0].expiration_date,
-      //             strike: parseFloat(data[holding.symbol].legs[0].strike_price),
-      //             chance: 0.88
-      //           }
-      //         }) : p
-      //     ),
-      //     ...(prev.slice(variant + 1).length === 1 ? [prev.slice(variant + 1)] : prev.slice(variant + 1))
-      //   ])
-
-    } catch (e) {
-      console.error(e);
-      renderError()
+      setQueue(prev => {
+        prev.delete(holding.symbol);
+        return prev;
+      });
+    } else if (direction === holdingDir) {
+      setQueue(queue.add(holding.symbol))
     }
-    // setTradeLoading(prev => prev[variant ? variantLabels.DEF : variantLabels.VAR].delete(holding.symbol) ? prev : prev);
-  }
+  };
+  console.log('queue', queue);
+  // getting added to wrong set in tradeLoading (variant instead of default)
+  // const trade = async (holding) => {
+  //   setTradeLoading(prev => prev[variant ? variantLabels.VAR : variantLabels.DEF].add(holding.symbol) && prev);
+  //   const renderError = () => notification.error({
+  //     duration: 10,
+  //     message: "Failure",
+  //     description: `Failed to execute order for ${holding.symbol}.`,
+  //   });
+  //   const token = loggedIn?.signInUserSession?.idToken?.jwtToken;
+  //   // const url = `${getApiUrl({ localOverride: "dev" })}/trade?variant=${Boolean(variant)}`;
+  //   try {
+  //     sendMessage({ token, type: holding.open_contracts ? 'BUY' : 'SELL', symbols: [holding.symbol], variant });
+  //     // const response = await fetch(url, { method: "POST", headers: { Authorization: jwtToken }, body: JSON.stringify({ type: holding.open_contracts ? 'BUY' : 'SELL', symbols: [holding.symbol] }) });
+  //     // const data = await response.json();
+  //     // console.log('data', typeof data, data);
+  //     // console.log('data keys', Object.keys(data));
+  //     //   {
+  //     //     "statusCode": 200,
+  //     //     "body": "{\"CVNA\": {\"account_number\": \"5QV38413\", \"cancel_url\": null, \"canceled_quantity\": \"0.00000\", \"created_at\": \"2023-12-22T20:01:47.326521Z\", \"direction\": \"debit\", \"id\": \"6585eb2b-9a21-4644-bfef-08da04aa6d4a\", \"legs\": [{\"executions\": [{\"id\": \"6585eb2b-5f6b-4623-b040-93a3763058ce\", \"price\": \"1.94000000\", \"quantity\": \"1.00000\", \"settlement_date\": \"2023-12-26\", \"timestamp\": \"2023-12-22T20:01:47.874000Z\"}], \"id\": \"6585eb2b-bbd4-42a6-9fb2-1a3ca7421173\", \"option\": \"https://api.robinhood.com/options/instruments/fbb52868-43b2-4316-86f1-9a48754d5f8f/\", \"position_effect\": \"close\", \"ratio_quantity\": 1, \"side\": \"buy\", \"expiration_date\": \"2023-12-22\", \"strike_price\": \"54.0000\", \"option_type\": \"call\", \"long_strategy_code\": \"fbb52868-43b2-4316-86f1-9a48754d5f8f_L1\", \"short_strategy_code\": \"fbb52868-43b2-4316-86f1-9a48754d5f8f_S1\"}], \"pending_quantity\": \"0.00000\", \"premium\": \"194.00000000\", \"processed_premium\": \"194\", \"net_amount\": \"194.03\", \"net_amount_direction\": \"debit\", \"price\": \"1.94000000\", \"processed_quantity\": \"1.00000\", \"quantity\": \"1.00000\", \"ref_id\": \"99e74494-af70-40a6-a0a4-04ec19cf8dcc\", \"regulatory_fees\": \"0.03\", \"state\": \"filled\", \"time_in_force\": \"gtc\", \"trigger\": \"immediate\", \"type\": \"limit\", \"updated_at\": \"2023-12-22T20:01:48.464649Z\", \"chain_id\": \"99954490-bfc1-4590-9cf7-19f7e8ca916d\", \"chain_symbol\": \"CVNA\", \"response_category\": null, \"opening_strategy\": null, \"closing_strategy\": \"short_call\", \"stop_price\": null, \"form_source\": null, \"client_bid_at_submission\": null, \"client_ask_at_submission\": null, \"client_time_at_submission\": null, \"average_net_premium_paid\": \"194.00000000\", \"estimated_total_net_amount\": \"194.03\", \"estimated_total_net_amount_direction\": \"debit\"}}",
+  //     //     "headers": {
+  //     //         "Access-Control-Allow-Origin": "*"
+  //     //     }
+  //     // }
+  //     // buy result is putting statusCode body and headers all in body - fix in api
+
+  //     // if ('error' in data[holding.symbol]) {
+  //     //   renderError();
+  //     // } else {
+  //     //   // this is for sell req,
+  //     //   // make for buy req too!
+  //     //   notification.success({
+  //     //     duration: 10,
+  //     //     message: <span style={{ display: 'flex', justifyContent: 'space-between' }}><span>Success</span><span style={{ color: 'lime', fontWeight: 'bold' }}>+ ${parseFloat(data[holding.symbol].premium).toFixed(0)}</span></span>,
+  //     //     description: `Executed order for ${holding.symbol}!`,
+  //     //   });
+
+  //     //   setPortfolio(prev => [
+  //     //     ...(prev.slice(0, variant).length === 1 ? [prev.slice(0, variant)] : prev.slice(0, variant)),
+  //     //     prev[variant].map(p =>
+  //     //       p.symbol === holding.symbol ?
+  //     //         ({
+  //     //           ...p,
+  //     //           ...{
+  //     //             open_contracts: holding.open_contracts - parseInt(data[holding.symbol].quantity),
+  //     //             expiration: data[holding.symbol].legs[0].expiration_date,
+  //     //             strike: parseFloat(data[holding.symbol].legs[0].strike_price),
+  //     //             chance: 0.88
+  //     //           }
+  //     //         }) : p
+  //     //     ),
+  //     //     ...(prev.slice(variant + 1).length === 1 ? [prev.slice(variant + 1)] : prev.slice(variant + 1))
+  //     //   ])
+
+  //   } catch (e) {
+  //     console.error(e);
+  //     renderError()
+  //   }
+  //   // setTradeLoading(prev => prev[variant ? variantLabels.DEF : variantLabels.VAR].delete(holding.symbol) ? prev : prev);
+  // }
 
   const columns = toggle ? [
     createColumn({ dataName: 'symbol' }),
@@ -235,9 +253,10 @@ const TradePage = () => {
       displayName: 'Action', render: (holding) =>
         <Button
           className={holding.open_contracts ? layoutStyles.start : subStyles.subscribe}
-          onClick={() => sell(holding)}
-          loading={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
-          disabled={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
+          onClick={() => handleQueue(holding)}
+          // loading={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
+          // disabled={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
+          disabled={queue.size && direction === Boolean(holding.open_contracts)}
         >
           {holding.open_contracts ? <PlusOutlined /> : <MinusOutlined />}
         </Button>
