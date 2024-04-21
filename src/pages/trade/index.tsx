@@ -29,7 +29,6 @@ const TradePage = () => {
   const [queue, setQueue] = useState(new Set())
   const [direction, setDirection] = useState(false)
   const toggleLabels = { OPTIONS: "OPT", STOCKS: "STX" };
-  const [emptyQueue, setEmptyQueue] = useState(true);
   const [, forceUpdate] = useReducer(x => x + 1, 0);
   // const [message, setMessage] = useState({});
 
@@ -149,7 +148,6 @@ const TradePage = () => {
       setQueue(prev => prev.add(holding.symbol))
     }
     setDirection(queueIsEmpty ? holdingDir : direction)
-    setEmptyQueue(queue.size === 0)
     forceUpdate();
     console.log('queue', queue);
   };
@@ -254,7 +252,7 @@ const TradePage = () => {
           onClick={() => handleQueue(holding)}
           // loading={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
           // disabled={tradeLoading[variant ? variantLabels.VAR : variantLabels.DEF].has(holding.symbol)}
-          disabled={Boolean(!emptyQueue && direction !== Boolean(holding.open_contracts))}
+          disabled={Boolean(queue.size && direction !== Boolean(holding.open_contracts))}
         >
           {holding.open_contracts ? <PlusOutlined /> : <MinusOutlined />}
         </Button>)
