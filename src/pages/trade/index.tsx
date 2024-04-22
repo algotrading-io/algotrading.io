@@ -13,7 +13,7 @@ import { MinusOutlined, PlusOutlined } from "@ant-design/icons";
 
 
 const isLocal = getEnvironment() === "local";
-let mockData = [];
+let mockData: Array<object> = [];
 if (isLocal) {
   mockData = (await import("@/pages/trade/fixtures.tsx")).default;
 }
@@ -112,7 +112,7 @@ const TradePage = () => {
       })
     }
   }, [message]);
-  const handleQueue = (holding) => {
+  const handleQueue = (holding: object) => {
     const holdingDir = Boolean(holding.open_contracts);
     const queueIsEmpty = queue[selector].size === 0;
     if (queue[selector].has(holding.symbol)) {
@@ -125,12 +125,8 @@ const TradePage = () => {
     console.log('queue', queue);
   };
   // getting added to wrong set in tradeLoading (variant instead of default)
-  const trade = async (symbols) => {
-    setTradeLoading(prev => {
-      symbols.forEach((symbol: string) => prev[selector].add(symbol));
-      // prev[selector] = new Set([...prev[selector], ...symbols]);
-      return prev;
-    });
+  const trade = async (symbols: Array<string>) => {
+    setTradeLoading(prev => symbols.forEach((symbol: string) => prev[selector].add(symbol)) || prev);
     const renderError = () => notification.error({
       duration: 10,
       message: "Failure",
@@ -224,7 +220,6 @@ const TradePage = () => {
     }),
     createColumn({
       displayName: 'Action', render: (holding) => {
-        console.log('tl', tradeLoading);
         return <Button
           className={queue[selector].has(holding.symbol) ? tradeStyles.selected : (holding.open_contracts ? layoutStyles.start : subStyles.subscribe)}
           onClick={() => handleQueue(holding)}
