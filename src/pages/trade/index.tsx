@@ -124,8 +124,8 @@ const TradePage = () => {
     forceUpdate();
     console.log('queue', queue);
   };
-  // getting added to wrong set in tradeLoading (variant instead of default)
   const trade = async (symbols: Array<string>) => {
+    // TODO: change direction name (overlap with response) and change to be dual (account for both variants)
     setTradeLoading(prev => symbols.forEach((symbol: string) => prev[selector].add(symbol)) || prev);
     const renderError = () => notification.error({
       duration: 10,
