@@ -126,7 +126,11 @@ const TradePage = () => {
   };
   // getting added to wrong set in tradeLoading (variant instead of default)
   const trade = async (symbols) => {
-    setTradeLoading(prev => prev[selector] = new Set([...prev[selector], ...symbols]) && prev);
+    setTradeLoading(prev => {
+      symbols.forEach((symbol: string) => prev[selector].add(symbol));
+      // prev[selector] = new Set([...prev[selector], ...symbols]);
+      return prev;
+    });
     const renderError = () => notification.error({
       duration: 10,
       message: "Failure",
@@ -219,8 +223,9 @@ const TradePage = () => {
       }
     }),
     createColumn({
-      displayName: 'Action', render: (holding) =>
-        <Button
+      displayName: 'Action', render: (holding) => {
+        console.log('tl', tradeLoading);
+        return <Button
           className={queue[selector].has(holding.symbol) ? tradeStyles.selected : (holding.open_contracts ? layoutStyles.start : subStyles.subscribe)}
           onClick={() => handleQueue(holding)}
           loading={tradeLoading[selector].has(holding.symbol)}
@@ -229,6 +234,7 @@ const TradePage = () => {
         >
           {holding.open_contracts ? <PlusOutlined /> : <MinusOutlined />}
         </Button>
+      }
     })
     // add chart for premium income per week
     // include dividend income on chart - area chart
