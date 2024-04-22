@@ -286,7 +286,8 @@ class Sell(Trade):
         # only use symbols that have positions available
         symbols = [symbol for symbol,
                    num_contracts in desired_contracts.items() if num_contracts]
-        prices = rh.stocks.get_latest_price(symbols)
+        prices = [float(price)
+                  for price in rh.stocks.get_latest_price(symbols)]
         lookup = {
             symbol: {
                 'quantity': desired_contracts[symbol],
