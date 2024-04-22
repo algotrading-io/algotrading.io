@@ -291,8 +291,8 @@ class Sell(Trade):
             symbol: {
                 'quantity': desired_contracts[symbol],
                 'curr': [0, 0, 0],
-                'price': prices[symbol]
-            } for symbol in symbols
+                'price': prices[idx]
+            } for idx, symbol in enumerate(symbols)
         }
 
         for symbol in lookup:
