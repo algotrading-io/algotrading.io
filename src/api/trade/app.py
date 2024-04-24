@@ -181,7 +181,7 @@ def round(n, decimals=0, dir='UP'):
     return fx(n * multiplier) / multiplier
 
 
-def suggest_num_contracts():
+def suggest_contracts():
     holdings = rh.build_holdings()
     max_contracts = {symbol: int(
         float(holding['quantity']) / 100) for symbol, holding in holdings.items()}
@@ -192,7 +192,9 @@ def suggest_num_contracts():
         float(position['shares_held_for_options_collateral']) / 100) for position in positions})
     available_contracts = {symbol: max_contract -
                            curr_contracts[symbol] for symbol, max_contract in max_contracts.items()}
-    return available_contracts
+    prices = {symbol: float(holding['price'])
+              for symbol, holding in holdings.items()}
+    return available_contracts, prices
 
 
 def get_expirations(expirations, num=2):
@@ -282,18 +284,18 @@ class Trade:
 
 class Sell(Trade):
     def init_chain(self, symbols):
-        desired_contracts = suggest_num_contracts()
+        desired_contracts, prices = suggest_contracts()
         # only use symbols that have positions available
         symbols = [symbol for symbol,
                    num_contracts in desired_contracts.items() if num_contracts]
-        prices = [float(price)
-                  for price in rh.stocks.get_latest_price(symbols)]
+        # prices = [float(price)
+        #           for price in rh.stocks.get_latest_price(symbols)]
         lookup = {
             symbol: {
                 'quantity': desired_contracts[symbol],
                 'curr': [0, 0, 0],
-                'price': prices[idx]
-            } for idx, symbol in enumerate(symbols)
+                'price': prices[symbol]
+            } for symbol in symbols
         }
 
         for symbol in lookup:
