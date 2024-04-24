@@ -380,7 +380,7 @@ const TradePage = () => {
       </span>
       <Table loading={loading} dataSource={toggle ? portfolio[variant] : portfolio[variant].filter(holding => parseFloat(holding?.quantity) >= 100)} columns={columns} />
       {toggle && <Pie {...config} />}
-      {toggle && <span>Loose Change: ${portfolio[variant].map(holding => holding?.loose).reduce((x, y) => x + y, 0)}</span>}
+      {toggle && <span>Loose Change: ${portfolio[variant].map(holding => holding?.loose).reduce((x, y) => x + y, 0).toFixed(2)}</span>}
     </>
   );
 };
