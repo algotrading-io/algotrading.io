@@ -116,9 +116,15 @@ def login(variant=False):
 
 def get_trade():
     holdings = rh.build_holdings()
-    for symbol in holdings:
+    for symbol, holding in holdings.items():
         holdings[symbol]['symbol'] = symbol
         holdings[symbol]['open_contracts'] = 0
+        price = float(holding['price'])
+        quant = float(holding['quantity']) % 100 if float(
+            holding['quantity']) > 100 else 0
+        amt = quant * price
+        holdings[symbol]['loose'] = amt
+
     opts = rh.options.get_open_option_positions()
     for opt in opts:
         sold = -1 if opt['type'] == 'short' else 1
