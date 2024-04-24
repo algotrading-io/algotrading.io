@@ -27,7 +27,7 @@ const TradePage = () => {
   const [toggle, setToggle] = useState(false);
   const [variant, setVariant] = useState(0);
   const [queue, setQueue] = useState({ [variantLabels.DEF]: new Set(), [variantLabels.VAR]: new Set() });
-  const [direction, setDirection] = useState(false)
+  const [direction, setDirection] = useState(false);
   const toggleLabels = { OPTIONS: "OPT", STOCKS: "STX" };
   const [, forceUpdate] = useReducer(x => x + 1, 0);
   const selector = variant ? variantLabels.VAR : variantLabels.DEF;
@@ -380,6 +380,7 @@ const TradePage = () => {
       </span>
       <Table loading={loading} dataSource={toggle ? portfolio[variant] : portfolio[variant].filter(holding => parseFloat(holding?.quantity) >= 100)} columns={columns} />
       {toggle && <Pie {...config} />}
+      {toggle && <span>Loose Change: ${portfolio[variant].map(holding => holding?.loose).reduce((x, y) => x + y, 0)}</span>}
     </>
   );
 };
