@@ -305,11 +305,11 @@ class Sell(Trade):
         }
 
         for symbol in lookup:
+            print('symbol in init_chain lookup', symbol)
             chain = rh.options.get_chains(symbol)
             price = lookup[symbol]['price']
             expirations = chain['expiration_dates']
             expirations = get_expirations(expirations)
-            print('expirations', expirations)
             lookup[symbol]['expirations'] = expirations
             # maybe turn these two lines into a fx called update_contracts and run before every trade attempt
             contracts = [get_contracts(symbol, exp, price)
