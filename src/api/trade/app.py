@@ -292,10 +292,7 @@ class Sell(Trade):
     def init_chain(self, symbols):
         desired_contracts, prices = suggest_contracts()
         # only use symbols that have positions available
-        symbols = [symbol for symbol,
-                   num_contracts in desired_contracts.items() if num_contracts]
-        # prices = [float(price)
-        #           for price in rh.stocks.get_latest_price(symbols)]
+        symbols = [symbol for symbol in symbols if desired_contracts[symbol]]
         lookup = {
             symbol: {
                 'quantity': desired_contracts[symbol],
