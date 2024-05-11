@@ -128,20 +128,20 @@ def get_trade():
     opts = rh.options.get_open_option_positions()
     for opt in opts:
         sold = -1 if opt['type'] == 'short' else 1
-        holdings[opt['chain_symbol']
-                 ]['open_contracts'] += int(float(opt['quantity'])) * sold
+        symbol = opt['chain_symbol']
+        if symbol not in holdings:
+            holdings[symbol] = {}
+        holdings[symbol]['open_contracts'] += int(
+            float(opt['quantity'])) * sold
         opt = rh.options.get_option_instrument_data_by_id(opt['option_id'])
-        holdings[opt['chain_symbol']
-                 ]['option_type'] = opt['type'][0].upper()
-        holdings[opt['chain_symbol']
-                 ]['expiration'] = opt['expiration_date']
-        holdings[opt['chain_symbol']]['strike'] = float(
+        holdings[symbol]['option_type'] = opt['type'][0].upper()
+        holdings[symbol]['expiration'] = opt['expiration_date']
+        holdings[symbol]['strike'] = float(
             opt['strike_price'])
         opt = rh.options.get_option_market_data_by_id(opt['id'])[0]
-        postfix = 'short' if holdings[opt['symbol']
-                                      ]['open_contracts'] < 0 else 'long'
+        postfix = 'short' if holdings[symbol]['open_contracts'] < 0 else 'long'
         chance = opt[f'chance_of_profit_{postfix}']
-        holdings[opt['symbol']]['chance'] = float(chance) if chance else chance
+        holdings[symbol]['chance'] = float(chance) if chance else chance
     holdings = sorted([holding for _, holding in holdings.items()],
                       key=lambda holding: holding['symbol'])
     body = [holding | {'key': idx} for idx, holding in enumerate(holdings)]
