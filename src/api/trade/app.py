@@ -324,7 +324,7 @@ class Sell(Trade):
         price = ceil(price / min_tick) * min_tick
         # lower price based on attempt
         price -= min_tick * offset
-        return price
+        return round(price, 2, 'UP')
 
     def adjust_option(self, symbol, lookup, results):
         option = lookup[symbol]
@@ -391,7 +391,30 @@ class Sell(Trade):
 
 
 class SellOut(Trade):
-    pass
+    def init_chain(self, symbols):
+        desired_contracts, prices = suggest_contracts()
+        # only use symbols that have positions available
+        symbols = [symbol for symbol in symbols if desired_contracts[symbol]]
+        lookup = {
+            symbol: {
+                'quantity': desired_contracts[symbol],
+                'curr': [0, 0, 0],
+                'price': prices[symbol]
+            } for symbol in symbols
+        }
+
+        for symbol in lookup:
+            print('symbol in init_chain lookup', symbol)
+            chain = rh.options.get_chains(symbol)
+            price = lookup[symbol]['price']
+            expirations = chain['expiration_dates']
+            expirations = get_expirations(expirations)
+            lookup[symbol]['expirations'] = expirations
+            # maybe turn these two lines into a fx called update_contracts and run before every trade attempt
+            contracts = [get_contracts(symbol, exp, price)
+                         for exp in expirations]
+            lookup[symbol]['contracts'] = contracts
+        return lookup
 
 
 class SellIn(Trade):
@@ -443,7 +466,7 @@ class Buy(Trade):
         price = floor(price / min_tick) * min_tick
         # lower price based on attempt
         price += min_tick * offset  # this should be plus? - DONE
-        return price
+        return round(price, 2, 'DOWN')
 
     def adjust_option(self, symbol, lookup, _):
         option = lookup[symbol]
