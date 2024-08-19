@@ -296,6 +296,7 @@ class Sell(Trade):
         lookup = {
             symbol: {
                 'quantity': desired_contracts[symbol],
+                # expiration index, contract index, price index
                 'curr': [0, 0, 0],
                 'price': prices[symbol]
             } for symbol in symbols
@@ -329,13 +330,20 @@ class Sell(Trade):
     def adjust_option(self, symbol, lookup, results):
         option = lookup[symbol]
         curr = option['curr']
+        print(f"adjusting option... {symbol}")
+        print(f"before curr: {curr}")
         contracts = option['contracts']
         if not contracts[curr[0]]:
+            print("not on first expiration date")
             if curr[0] == len(option['expirations']) - 1:
+                print("already on last expiration date - error: options exhausted")
                 results[symbol] = {'error': 'EXHAUSTED'}
             else:
+                print(
+                    "iterating to next expiration, resetting contract and price indices")
                 lookup[symbol]['curr'] = [curr[0] + 1, 0, 0]
         else:
+            print("iterating price index")
             curr[2] += 1
             contract = contracts[curr[0]][curr[1]]
             mid_price = get_mid_price(contract)
@@ -351,16 +359,27 @@ class Sell(Trade):
                     Mid: {mid_price} Price: {price}
                     """
                 )
+                print("spread is too high")
+                print("resetting price index")
                 curr[2] = 0
                 if curr[1] == len(contracts[curr[0]]) - 1:
+                    print("on last contract - resetting contract idx")
                     curr[1] = 0
                     if curr[0] == len(option['expirations']) - 1:
+                        print("on last expiration - error: options exhausted")
                         results[symbol] = {'error': 'EXHAUSTED'}
                     else:
+                        print("iterating expiration date")
                         print('Seeking further expiration date...')
                         curr[0] += 1
                 else:
+                    print("iterating contract idx")
                     curr[1] += 1
+        print(f"after curr: {curr}")
+        print(f"lookup curr: {lookup[symbol]['curr']}")
+        print(f"currs match: {curr == lookup[symbol]['curr']}")
+        # if currs don't match, then following line is needed
+        lookup[symbol]['curr'] = curr
         lookup = update_contract(symbol, lookup)
         return lookup, results
 
@@ -370,6 +389,8 @@ class Sell(Trade):
         for idx, symbol in enumerate(remaining):
             option = lookup[symbol]
             curr = option['curr']
+            print(f"executing order... {symbol}")
+            print(f"curr: {curr}")
             expiration = option['expirations'][curr[0]]
             contract_candidates = option['contracts'][curr[0]]
             if contract_candidates:
