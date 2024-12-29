@@ -7,5 +7,5 @@ pandas
 pynamodb == 5.5.1
 stripe
 jinja2
-numpy
+numpy == 1.23.4
 cryptography
