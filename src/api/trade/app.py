@@ -36,6 +36,7 @@ def calc_d2(d1, implied_vol, time):
 
 
 def chance_of_profit(**kwargs):
+    # IV, div yield, and time are decimals. Time is in years.
     # rh assumes div_yield is zero when calculating this
     d1 = calc_d1(**kwargs)
     d2 = calc_d2(d1, kwargs['implied_vol'], kwargs['time'])
