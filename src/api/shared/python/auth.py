@@ -5,7 +5,7 @@ from time import time
 from jose import jwk, jwt
 from jose.utils import base64url_decode
 
-if os.environ.get('LOCAL') != 'true':
+if os.environ.get('TEST') != 'true':
     region = os.environ['REGION']
     user_pool_id = os.environ['USER_POOL_ID']
     web_client_id = os.environ['WEB_CLIENT_ID']
