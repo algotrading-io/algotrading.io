@@ -11,3 +11,4 @@ numpy == 1.23.4
 cryptography
 pyotp
 git+https://github.com/bhyman67/robin_stocks_bh67.git@0d4574fb11ba4f1ff0acc8046174924bfd7ec532
+python-jose
