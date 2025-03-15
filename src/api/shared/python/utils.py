@@ -6,7 +6,13 @@ RES_HEADERS = {"Access-Control-Allow-Origin": "*"}
 
 PAST_DATE = datetime(2020, 1, 1, tzinfo=timezone.utc)
 DATE_FMT = '%Y-%m-%d'
-TEST = str(os.environ.get('TEST')).lower() == 'true'
+
+
+def str_to_bool(s):
+    return s.lower() == 'true'
+
+
+TEST = str_to_bool(str(os.environ.get('TEST')))
 
 
 def get_email(user, env):
@@ -23,7 +29,7 @@ def transform_signal(raw_signal):
     if type(sig) == list:
         sig = sig[0]
     if type(sig) == str:
-        sig = sig.lower() == 'true'
+        sig = str_to_bool(sig)
     sig = 'BUY' if sig else 'SELL'
 
     signal['Date'] = date
@@ -59,21 +65,24 @@ def options():
     }
 
 
-def verify_user(claims):
+def verify_user(event):
+    claims = (
+        event['requestContext']['authorizer']['claims']
+        if 'requestContext' in event else event
+    )
     # email_verified value comes back as str, so explicitly casting as str
     # in case it comes back as bool in the future
-    email_verified = str(claims['email_verified']).lower()
+    verified = str_to_bool(str(claims['email_verified']))
     # ['email']
     # ['email_verified']
     # ['name']
     providers = ['Google', 'Facebook', 'LoginWithAmazon']
-    actually_verified = email_verified == 'true'
-    if email_verified == 'false':
+    if not verified:
         if 'identities' in claims:
             identities = json.loads(claims['identities'])
             # => ['providerName'] == 'Google'
             # => ['providerType'] == 'Google'
             if 'providerName' in identities:
                 if identities['providerName'] in providers:
-                    actually_verified = True
-    return actually_verified
+                    verified = True
+    return verified and claims

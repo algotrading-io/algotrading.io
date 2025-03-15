@@ -20,7 +20,7 @@
     "start:db": "docker run -d --rm -p 8000:8000 --name db amazon/dynamodb-local",
     "stop:db": "docker kill --signal=SIGTERM db && sleep 5",
     "seed:db": "util/seed.sh",
-    "test:api": "bash -ic \"source util/env.sh && python -m coverage run -m pytest -vv -s && python -m coverage combine && python -m coverage report\"",
+    "test:api": "bash -ic \"source util/env.sh && python -m coverage run --omit=src/api/trade/app.py,src/api/shared/python/auth.py -m pytest -vv -s && python -m coverage combine && python -m coverage report --omit=src/api/trade/app.py,src/api/shared/python/auth.py\"",
     "test:api+db": "npm run stop:db; npm run start:db && npm run seed:db && npm run test:api && npm run stop:db",
     "invoke:api": "cd src/api && sam local invoke PreviewFunction --parameter-overrides $(cat parameters.env)",
     "ci": "rm -rf node_modules && pnpm install --frozen-lockfile",
@@ -46,6 +46,7 @@
     "react-plotly.js": "^2.6.0",
     "react-router-dom": "^6.6.1",
     "react-syntax-highlighter": "^15.5.0",
+    "react-use-websocket": "^4.5.0",
     "styled-components": "^5.3.6",
     "swagger-ui-react": "^4.12.0"
   },

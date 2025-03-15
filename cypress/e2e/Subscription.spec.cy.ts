@@ -45,8 +45,8 @@ describe('Subscription', () => {
           //   }
           //   return true;
           // })
-          cy.get('a').contains('span', 'Cancel plan').click();
-          cy.contains('button', 'Cancel plan').click();
+          cy.get('a').contains('span', 'Cancel subscription').click();
+          cy.contains('button', 'Cancel subscription').click();
           cy.contains('button', 'No thanks').click();
           cy.contains('span', 'Return to').click();
         });

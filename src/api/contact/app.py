@@ -18,8 +18,7 @@ def handle_contact(event, _):
 
 
 def post_contact(event):
-    claims = event['requestContext']['authorizer']['claims']
-    verified = verify_user(claims)
+    verified = verify_user(event)
 
     if not verified:
         return error(401, 'This account is not verified.')
@@ -34,7 +33,7 @@ def post_contact(event):
     if not message or len(message) > max_message_len:
         return error(400, 'Write a valid message.')
 
-    email = claims['email']
+    email = verified['email']
     email_sent = send_email(email, subject, message)
 
     status_code = 200

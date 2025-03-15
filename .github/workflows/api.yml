@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest coverage boto3 requests pandas pynamodb stripe jinja2 numpy cryptography
+          pip install -r requirements.txt
 
       - name: Lint with flake8
         run: |
@@ -73,23 +73,31 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.DEV_STRIPE_SECRET_KEY }}
         run: npm run test:api+db
 
-      - name: Create parameters.env [prod]
+      - name: Create parameters.env [${{ fromJSON('["dev","prod"]')[github.ref_name == 'master'] }}]
         env:
           EmailUser: ${{ secrets.EMAIL_USER }}
           SignalEmail: ${{ secrets.SIGNAL_EMAIL }}
           EmailPass: ${{ secrets.EMAIL_PASS }}
-          StripePriceId: ${{ secrets.STRIPE_PRICE_ID }}
-          StripeSecretKey: ${{ secrets.STRIPE_SECRET_KEY }}
+          StripePriceId: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_STRIPE_PRICE_ID, secrets.STRIPE_PRICE_ID))[github.ref_name == 'master'] }}
+          StripeSecretKey: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_STRIPE_SECRET_KEY, secrets.STRIPE_SECRET_KEY))[github.ref_name == 'master'] }}
           # Webhook signing key secret for endpoint (not for CLI)
-          StripeWebhookSecret: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          S3Bucket: ${{ secrets.HYPERDRIVE_BUCKET }}
-          Stage: prod
-          CertArn: ${{ secrets.CERT_ARN }}
+          StripeWebhookSecret: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_STRIPE_WEBHOOK_SECRET, secrets.STRIPE_WEBHOOK_SECRET))[github.ref_name == 'master'] }}
+          S3Bucket: ${{ fromJSON(format('["{0}","{1}"]', secrets.HYPERDRIVE_DEV_BUCKET, secrets.HYPERDRIVE_BUCKET))[github.ref_name == 'master'] }}
+          Stage: ${{ fromJSON(format('["{0}","{1}"]', 'dev', 'prod'))[github.ref_name == 'master'] }}
+          CertArn: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_CERT_ARN, secrets.CERT_ARN))[github.ref_name == 'master'] }}
           HostedZoneId: ${{ secrets.HOSTED_ZONE_ID }}
-          UserPoolArn: ${{ secrets.USER_POOL_ARN }}
+          UserPoolArn: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_USER_POOL_ARN, secrets.USER_POOL_ARN))[github.ref_name == 'master'] }}
+          UserPoolId: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_USER_POOL_ID, secrets.USER_POOL_ID))[github.ref_name == 'master'] }}
+          WebClientId: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_WEB_CLIENT_ID, secrets.WEB_CLIENT_ID))[github.ref_name == 'master'] }}
           Salt: ${{ secrets.SALT }}
-          CryptPass: ${{ secrets.CRYPT_PASS }}
-          EmitSecret: ${{ secrets.EMIT_SECRET }}
+          RHUsername: ${{ secrets.RH_USERNAME }}
+          RHPassword: ${{ secrets.CRYPT_PASS }}
+          RH2FA: ${{ secrets.RH_2FA}}
+          RHUsername2: ${{ secrets.RH_USERNAME2 }}
+          RHPassword2: ${{ secrets.RH_PASSWORD2 }}
+          RH2FA2: ${{ secrets.RH_2FA2}}
+          EmitSecret: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_EMIT_SECRET, secrets.EMIT_SECRET))[github.ref_name == 'master'] }}
+          FILE_PREFIX: ${{ fromJSON('["dev-",""]')[github.ref_name == 'master'] }}
         run: |
           echo "
           EmailUser=${EmailUser}
@@ -102,62 +110,25 @@ jobs:
           Stage=${Stage}
           CertArn=${CertArn}
           HostedZoneId=${HostedZoneId}
+          UserPoolId=${UserPoolId}
+          WebClientId=${WebClientId}
           UserPoolArn=${UserPoolArn}
           Salt=${Salt}
-          CryptPass=${CryptPass}
+          RHUsername=${RHUsername}
+          RHPassword=${RHPassword}
+          RH2FA=${RH2FA}
+          RHUsername2=${RHUsername2}
+          RHPassword2=${RHPassword2}
+          RH2FA2=${RH2FA2}
           EmitSecret=${EmitSecret}
-          " >> src/api/parameters.env
-        if: ${{ github.ref_name == 'master' }}
-
-      - name: Create parameters.env [dev]
-        env:
-          EmailUser: ${{ secrets.EMAIL_USER }}
-          SignalEmail: ${{ secrets.SIGNAL_EMAIL }}
-          EmailPass: ${{ secrets.EMAIL_PASS }}
-          StripePriceId: ${{ secrets.DEV_STRIPE_PRICE_ID }}
-          StripeSecretKey: ${{ secrets.DEV_STRIPE_SECRET_KEY }}
-          # Webhook signing key secret for endpoint (not for CLI)
-          StripeWebhookSecret: ${{ secrets.DEV_STRIPE_WEBHOOK_SECRET }}
-          S3Bucket: ${{ secrets.HYPERDRIVE_DEV_BUCKET }}
-          Stage: dev
-          CertArn: ${{ secrets.DEV_CERT_ARN }}
-          HostedZoneId: ${{ secrets.HOSTED_ZONE_ID }}
-          UserPoolArn: ${{ secrets.DEV_USER_POOL_ARN }}
-          Salt: ${{ secrets.SALT }}
-          CryptPass: ${{ secrets.CRYPT_PASS }}
-          EmitSecret: ${{ secrets.DEV_EMIT_SECRET }}
-        run: |
-          echo "
-          EmailUser=${EmailUser}
-          SignalEmail=${SignalEmail}
-          EmailPass=${EmailPass}
-          StripePriceId=${StripePriceId}
-          StripeSecretKey=${StripeSecretKey}
-          StripeWebhookSecret=${StripeWebhookSecret}
-          S3Bucket=${S3Bucket}
-          Stage=${Stage}
-          CertArn=${CertArn}
-          HostedZoneId=${HostedZoneId}
-          UserPoolArn=${UserPoolArn}
-          Salt=${Salt}
-          CryptPass=${CryptPass}
-          EmitSecret=${EmitSecret}
-          " >> src/api/dev-parameters.env
-        if: ${{ github.ref_name != 'master' }}
+          " >> src/api/${FILE_PREFIX}parameters.env
 
       - name: Build API
         run: npm run build:api
 
-      - name: Deploy API [prod]
-        run: npm run deploy:api
+      - name: Deploy API [${{ fromJSON('["dev","prod"]')[github.ref_name == 'master'] }}]
+        run: npm run deploy${CMD_POSTFIX}:api
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        if: ${{ github.ref_name == 'master' }}
-
-      - name: Deploy API [dev]
-        run: npm run deploy-dev:api
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        if: ${{ github.ref_name != 'master' }}
+          CMD_POSTFIX: ${{ fromJSON('["-dev",""]')[github.ref_name == 'master'] }}

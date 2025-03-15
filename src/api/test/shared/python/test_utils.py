@@ -59,19 +59,22 @@ def test_options():
 
 
 def test_verify_user():
-    claims = {'email_verified': 'true'}
+    def create_claims(claims):
+        return {'requestContext': {'authorizer': {'claims': claims}}}
+    claims = create_claims({'email_verified': 'true'})
     assert verify_user(claims)
-    claims = {'email_verified': 'false'}
+    claims = create_claims({'email_verified': 'false'})
     assert not verify_user(claims)
-    claims = {'email_verified': 'false',
-              'identities': '{"providerName": "Google"}'}
+    claims = create_claims({'email_verified': 'false',
+                            'identities': '{"providerName": "Google"}'})
     assert verify_user(claims)
-    claims = {'email_verified': 'false',
-              'identities': '{"providerName": "Facebook"}'}
+    claims = create_claims({'email_verified': 'false',
+                            'identities': '{"providerName": "Facebook"}'})
     assert verify_user(claims)
-    claims = {'email_verified': 'false',
-              'identities': '{"providerName": "LoginWithAmazon"}'}
+    claims = create_claims({'email_verified': 'false',
+                            'identities':
+                            '{"providerName": "LoginWithAmazon"}'})
     assert verify_user(claims)
-    claims = {'email_verified': 'false',
-              'identities': '{"providerName": "Apple"}'}
+    claims = create_claims({'email_verified': 'false',
+                            'identities': '{"providerName": "Apple"}'})
     assert not verify_user(claims)

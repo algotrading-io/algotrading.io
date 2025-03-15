@@ -13,7 +13,6 @@ import {
   Modal,
   Skeleton,
   notification,
-  Segmented
 } from "antd";
 import styled from "styled-components";
 import { G2, Line } from "@ant-design/charts";
@@ -34,6 +33,7 @@ import {
   addDays,
   signalColors,
   signalEmojis,
+  Toggle,
 } from "@/utils";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 const { Title } = Typography;
@@ -41,31 +41,6 @@ const antIcon = <LoadingOutlined style={{ fontSize: 50 }} spin />;
 import { AccountContext } from "@/layouts";
 
 const toggleLabels = { BTC: "₿", USD: "$" };
-
-const toggleGray = 'rgba(255, 255, 255, 0.2)';
-const Toggle = styled(Segmented)`
-  .ant-segmented-item-selected {
-    background-image: linear-gradient(to bottom right, ${(props: { val: boolean }) =>
-    (props.val ? "#F7931A" : toggleGray)}, ${(props: { val: boolean }) => (props.val ? "#F7931A" : toggleGray)} );
-    
-    color: rgba(255, 255, 255, 0.85);
-  }
-
-  .ant-segmented-item:hover,
-  .ant-segmented-item:focus {
-    color: rgba(255, 255, 255, 0.85);
-  }
-
-  .ant-segmented-thumb {
-    background-color: transparent;
-    border-width: 1px;
-    border-style: solid;
-    border-left-color: ${(props: { val: boolean }) => (props.val ? toggleGray : "#F7931A")};
-    border-top-color: ${(props: { val: boolean }) => (props.val ? toggleGray : "#F7931A")};
-    border-right-color: ${(props: { val: boolean }) => (props.val ? toggleGray : "#F7931A")};
-    border-bottom-color: ${(props: { val: boolean }) => (props.val ? toggleGray : "#F7931A")};
-  }
-`;
 
 const RibbonCol = styled(Col)`
   .ant-ribbon-wrapper, .ant-card {
@@ -565,6 +540,7 @@ const Page = () => {
                   </a>
                 </Title>
                 <Toggle
+                  var={'home'}
                   val={toggle}
                   options={[toggleLabels.BTC, toggleLabels.USD]}
                   defaultValue={toggleLabels.BTC}

@@ -22,15 +22,14 @@ def handle_account(event, _):
 
 
 def get_account(event):
-    claims = event['requestContext']['authorizer']['claims']
-    verified = verify_user(claims)
+    verified = verify_user(event)
 
     status_code = 401
     body = json.dumps({'message': 'This account is not verified.'})
 
     if verified:
         status_code = 200
-        email = claims['email']
+        email = verified['email']
         try:
             user = UserModel.get(email)
         except UserModel.DoesNotExist:
@@ -46,15 +45,14 @@ def get_account(event):
 
 
 def post_account(event):
-    claims = event['requestContext']['authorizer']['claims']
-    verified = verify_user(claims)
+    verified = verify_user(event)
 
     status_code = 401
     body = json.dumps({'message': 'This account is not verified.'})
 
     if verified:
         status_code = 200
-        email = claims['email']
+        email = verified['email']
         user = UserModel.get(email)
         req_body = json.loads(event['body'])
         actions = []

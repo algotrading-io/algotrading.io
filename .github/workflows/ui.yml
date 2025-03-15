@@ -4,11 +4,13 @@ on:
   pull_request:
     paths-ignore:
       - src/api/**
+      # add path ! for swagger yaml
       - .github/workflows/api.yml
     branches: [master]
   push:
     paths-ignore:
       - src/api/**
+      # add path ! for swagger yaml
       - .github/workflows/api.yml
     branches: [master]
 

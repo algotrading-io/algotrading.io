@@ -1,3 +1,6 @@
+import { Segmented } from "antd";
+import styled from "styled-components";
+
 export const getEnvironment = () => {
   const hostname = window.location.hostname;
   switch (hostname) {
@@ -220,3 +223,31 @@ export const signalEmojis = {
   BUY: "🚀",
   SELL: "💥",
 };
+
+const toggleGray = 'rgba(255, 255, 255, 0.3)';
+
+export const Toggle = styled(Segmented)`
+
+  .ant-segmented-item-selected {
+    background-color: ${(props: { var: string, val: boolean }) => (props.var == 'home' ? (props.val ? '#F7931A' : toggleGray) : 'unset')};
+    outline: ${(props: { var: string, val: boolean }) => (props.var === 'home' ? "unset" : "1px solid " + (props.val ? "#52e5ff" : "magenta"))};
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .ant-segmented-item:hover,
+  .ant-segmented-item:focus {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .ant-segmented-thumb {
+    background-color: ${(props: { var: string, val: boolean }) => (props.var === 'home' ? 'transparent' : (props.val ? "magenta" : "#52e5ff"))};
+    border-width: ${(props: { var: string, val: boolean }) => (props.var === 'home' ? '1px' : 'unset')};
+    border-style: ${(props: { var: string, val: boolean }) => (props.var === 'home' ? 'solid' : 'unset')};
+    border-left-color: ${(props: { var: string, val: boolean }) => (props.var === 'home' ? (props.val ? toggleGray : "#F7931A") : 'unset')};
+    border-top-color: ${(props: { var: string, val: boolean }) => (props.var === 'home' ? (props.val ? toggleGray : "#F7931A") : 'unset')};
+    border-right-color: ${(props: { var: string, val: boolean }) => (props.var === 'home' ? (props.val ? toggleGray : "#F7931A") : 'unset')};
+    border-bottom-color: ${(props: { var: string, val: boolean }) => (props.var === 'home' ? (props.val ? toggleGray : "#F7931A") : 'unset')};
+  }
+`;
+
+export const isEmpty = (obj: Object) => !(obj && Object.keys(obj).length)

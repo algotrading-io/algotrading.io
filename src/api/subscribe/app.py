@@ -62,15 +62,14 @@ def post_checkout(event):
     # https://stripe.com/docs/radar/integration#recommendations
 
     # TODO: figure out 3DS Secure 2 and Chargeback Protection
-    claims = event['requestContext']['authorizer']['claims']
-    verified = verify_user(claims)
+    verified = verify_user(event)
 
     if not verified:
         return error(401, 'This account is not verified.')
 
     price_id = os.environ['STRIPE_PRICE_ID']
     env = os.environ['STAGE']
-    email = claims['email']
+    email = verified['email']
     req_headers = event['headers']
     origin = req_headers.get(
         'origin') or f"https://{'dev.' if env == 'dev' else ''}forcepu.sh"
@@ -101,7 +100,7 @@ def post_checkout(event):
             # That way, api can return existing session instead of creating new one.
             # Unexpire session? - but would have to manage prices make sure current priceid
     else:
-        name = claims['name']
+        name = verified['name']
         customer = stripe.Customer.create(email=email, name=name)
         customer_id = customer['id']
         user.update(actions=[UserModel.customer_id.set(customer_id)])
@@ -167,14 +166,13 @@ def post_billing(event):
     # create customer portal session
     # (where customer can cancel, change payment method, see payment history, etc)
 
-    claims = event['requestContext']['authorizer']['claims']
-    verified = verify_user(claims)
+    verified = verify_user(event)
 
     if not verified:
         return error(401, 'This account is not verified.')
 
     env = os.environ['STAGE']
-    email = claims['email']
+    email = verified['email']
     req_headers = event['headers']
     origin = req_headers.get(
         'origin') or f"https://{'dev.' if env == 'dev' else ''}forcepu.sh"

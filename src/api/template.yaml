@@ -19,6 +19,12 @@ Parameters:
   UserPoolArn:
     Type: "String"
     NoEcho: true
+  UserPoolId:
+    Type: "String"
+    NoEcho: true
+  WebClientId:
+    Type: "String"
+    NoEcho: true
   StripeSecretKey:
     Type: "String"
     NoEcho: true
@@ -37,13 +43,28 @@ Parameters:
   Salt:
     Type: "String"
     NoEcho: true
-  CryptPass:
-    Type: "String"
-    NoEcho: true
   EmitSecret:
     Type: "String"
     NoEcho: true
   SignalEmail:
+    Type: "String"
+    NoEcho: true
+  RHUsername:
+    Type: "String"
+    NoEcho: true
+  RHPassword:
+    Type: "String"
+    NoEcho: true
+  RH2FA:
+    Type: "String"
+    NoEcho: true
+  RHUsername2:
+    Type: "String"
+    NoEcho: true
+  RHPassword2:
+    Type: "String"
+    NoEcho: true
+  RH2FA2:
     Type: "String"
     NoEcho: true
 
@@ -57,6 +78,164 @@ Conditions:
     !Equals [!Ref Stage, prod]
 
 Resources:
+  WebSocketApi:
+      Type: AWS::ApiGatewayV2::Api
+      Properties:
+        Name: !Sub "ws-api-${Stage}"
+        ProtocolType: WEBSOCKET
+        RouteSelectionExpression: "$request.body.action"
+  # WebSocketAuth:
+  #   Type: AWS::ApiGatewayV2::Authorizer
+  #   Properties:
+  #     Name: WebSocketAuth
+  #     ApiId: !Ref WebSocketApi
+  #     AuthorizerType: JWT
+  #     JwtConfiguration:
+  #       Audience: 
+  #         - audience
+  #       Issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPoolId}"
+  #     IdentitySource:
+  #       - "$request.header.Authorization"
+  # Could use this instead inside websocket sendMessage fx
+  # https://github.com/awslabs/aws-jwt-verify
+
+  WebSocketRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: $default
+      AuthorizationType: NONE
+      OperationName: WebSocketRoute
+      Target: !Join
+        - '/'
+        - - 'integrations'
+          - !Ref WebSocketIntegration
+  WebSocketIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref WebSocketApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketFunction.Arn}/invocations
+  WebSocketDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+    - WebSocketRoute
+    Properties:
+      ApiId: !Ref WebSocketApi
+  WebSocketStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: !Ref Stage
+      # DeploymentId: !Ref WebSocketDeployment
+      ApiId: !Ref WebSocketApi
+      AutoDeploy: true
+  WebSocketRouteResponse:
+    Type: AWS::ApiGatewayV2::RouteResponse
+    Properties:
+      RouteId: !Ref WebSocketRoute
+      ApiId: !Ref WebSocketApi
+      RouteResponseKey: $default
+  WebSocketDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      DomainNameConfigurations:
+        - CertificateArn: !Ref CertArn
+          EndpointType: REGIONAL
+  WebSocketRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Type: A
+      Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      AliasTarget:
+        DNSName: !GetAtt WebSocketDomain.RegionalDomainName
+        # EvaluateTargetHealth: Boolean
+        HostedZoneId: !GetAtt WebSocketDomain.RegionalHostedZoneId
+      HostedZoneId: !Ref HostedZoneId
+  WebSocketMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    DependsOn:
+    - WebSocketDomain
+    Properties:
+      ApiId: !Ref WebSocketApi
+      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      Stage: !Ref WebSocketStage
+  WebSocketFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      MemorySize: 10240 # 10GB
+      Timeout: 900 # 15 min
+      Environment:
+        Variables:
+          S3_BUCKET: !Ref S3Bucket
+          RH_USERNAME: !Ref RHUsername
+          RH_PASSWORD: !Ref RHPassword
+          RH_2FA: !Ref RH2FA
+          RH_USERNAME2: !Ref RHUsername2
+          RH_PASSWORD2: !Ref RHPassword2
+          RH_2FA2: !Ref RH2FA2
+          HOME: /tmp
+          REGION: !Ref AWS::Region
+          USER_POOL_ID: !Ref UserPoolId
+          WEB_CLIENT_ID: !Ref WebClientId
+      Policies:
+        - Statement:
+            - Sid: S3ReadWritePolicy
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource: !Sub "arn:aws:s3:::${S3Bucket}/data/robinhood*.pickle"
+        - Statement:
+            - Sid: ConnectWebSocket
+              Effect: Allow
+              Action:
+                - execute-api:Invoke
+                - execute-api:ManageConnections
+              # Resource: !Sub "arn:aws:execute-api:::${S3Bucket}/data/robinhood*.pickle"
+              Resource: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*'
+      PackageType: Zip
+      CodeUri: trade
+      Runtime: python3.9 
+      Handler: app.handle_ws
+      Layers:
+      - !Ref SharedLayer
+      # MemorySize: 256
+      # Runtime: nodejs14.x
+      # Environment:
+      #   Variables:
+      #     TABLE_NAME: !Ref TableName
+      # Policies:
+      # - DynamoDBCrudPolicy:
+      #     TableName: !Ref TableName
+      # - Statement:
+      #   - Effect: Allow
+      #     Action:
+      #     - 'execute-api:ManageConnections'
+      #     Resource:
+      #     - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SimpleChatWebSocket}/*'
+  WebSocketPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - WebSocketApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref WebSocketFunction
+      Principal: apigateway.amazonaws.com
+  # WebSocketFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     Handler: index.handler
+  #     Timeout: 30
+  #     Runtime: nodejs8.10
+  #     CodeUri: ./
+  #     # Policies:
+  #     #   - AWSLambdaFullAccess
+  #     #   - CloudWatchLogsFullAccess
+  #     #   - AmazonAPIGatewayInvokeFullAccess
+  #     #   - AmazonAPIGatewayAdministrator
   ApiGatewayApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -200,6 +379,61 @@ Resources:
             Path: /preview
             Method: get
             RestApiId: !Ref ApiGatewayApi
+  TradeFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      MemorySize: 10240 # 10GB
+      Timeout: 900 # 15 min
+      Environment:
+        Variables:
+          S3_BUCKET: !Ref S3Bucket
+          RH_USERNAME: !Ref RHUsername
+          RH_PASSWORD: !Ref RHPassword
+          RH_2FA: !Ref RH2FA
+          RH_USERNAME2: !Ref RHUsername2
+          RH_PASSWORD2: !Ref RHPassword2
+          RH_2FA2: !Ref RH2FA2
+          HOME: /tmp
+          REGION: !Ref AWS::Region
+          USER_POOL_ID: !Ref UserPoolId
+          WEB_CLIENT_ID: !Ref WebClientId
+      Policies:
+        - Statement:
+            - Sid: S3ReadWritePolicy
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource: !Sub "arn:aws:s3:::${S3Bucket}/data/robinhood*.pickle"
+      PackageType: Zip
+      CodeUri: trade
+      Runtime: python3.9 
+      Handler: app.handle_trade
+      Layers:
+      - !Ref SharedLayer
+      Events:
+        GetTrade:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /trade
+            Method: get
+            RestApiId: !Ref ApiGatewayApi
+            Auth:
+              Authorizer: CognitoAuth
+        PostTrade:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /trade
+            Method: post
+            RestApiId: !Ref ApiGatewayApi
+            Auth:
+              Authorizer: CognitoAuth
+        Options:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /trade
+            Method: options
+            RestApiId: !Ref ApiGatewayApi
   ModelFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -340,7 +574,7 @@ Resources:
       Environment:
         Variables:
           SALT: !Ref Salt
-          CRYPT_PASS: !Ref CryptPass
+          CRYPT_PASS: !Ref RHPassword
           EMIT_SECRET: !Ref EmitSecret
           TABLE_NAME: !Ref UsersTable
           STAGE: !Ref Stage

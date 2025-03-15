@@ -1,14 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { Typography, Segmented, Row, Col, Card, Statistic, Spin } from "antd";
+import { Typography, Row, Col, Card, Statistic, Spin } from "antd";
 import Plotly from "plotly.js-dist-min";
 import createPlotlyComponent from "react-plotly.js/factory";
-import { getApiUrl, getDayDiff, get3DCircle } from "@/utils";
+import { getApiUrl, getDayDiff, get3DCircle, Toggle } from "@/utils";
 import pageStyles from "../home/index.module.less";
 import { LoadingOutlined } from "@ant-design/icons";
 import overrides from "./index.module.less";
 import "./index.module.less";
-
-import styled from "styled-components";
 
 const Plot = createPlotlyComponent(Plotly);
 const { Title } = Typography;
@@ -22,25 +20,6 @@ const eyes = get3DCircle(
 );
 const antIcon = <LoadingOutlined style={{ fontSize: 50 }} spin />;
 const spinner = <Spin style={{ width: "100%" }} indicator={antIcon} />;
-
-const Toggle = styled(Segmented)`
-  .ant-segmented-item-selected {
-    background-color: unset;
-    outline: 1px solid
-      ${(props: { val: boolean }) => (props.val ? "#52e5ff" : "magenta")};
-    color: rgba(255, 255, 255, 0.85);
-  }
-
-  .ant-segmented-item:hover,
-  .ant-segmented-item:focus {
-    color: rgba(255, 255, 255, 0.85);
-  }
-
-  .ant-segmented-thumb {
-    background-color: ${(props: { val: boolean }) =>
-    props.val ? "magenta" : "#52e5ff"};
-  }
-`;
 
 const AlgorithmPage = () => {
   const [viz2D, setViz2D] = useState();
