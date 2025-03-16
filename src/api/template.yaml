@@ -100,8 +100,6 @@ Resources:
       DomainValidationOptions:
         - DomainName: !Ref Domain
           HostedZoneId: !Ref HostedZone
-        - DomainName: !Sub "*.${Domain}"
-          HostedZoneId: !Ref HostedZone
       ValidationMethod: DNS
   # WebSocketAuth:
   #   Type: AWS::ApiGatewayV2::Authorizer
