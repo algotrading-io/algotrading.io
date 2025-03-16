@@ -92,12 +92,12 @@ Resources:
     Properties:
       CertificateAuthorityArn: String
       CertificateTransparencyLoggingPreference: String
-      DomainName: String
+      DomainName: !Ref Domain
       DomainValidationOptions: 
         - DomainValidationOption
       SubjectAlternativeNames: 
         - String
-      ValidationMethod: String
+      ValidationMethod: DNS
   # WebSocketAuth:
   #   Type: AWS::ApiGatewayV2::Authorizer
   #   Properties:
