@@ -164,9 +164,9 @@ Resources:
           EndpointType: REGIONAL
   WebSocketRecord:
     Type: AWS::Route53::RecordSet
+    DependsOn: HostedZone
     Properties:
       Type: A
-      DependsOn: HostedZone
       Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
       # Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       AliasTarget:
