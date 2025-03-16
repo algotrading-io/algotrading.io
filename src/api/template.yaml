@@ -90,13 +90,12 @@ Resources:
   Certificate:
     Type: AWS::CertificateManager::Certificate
     Properties:
-      CertificateAuthorityArn: String
-      CertificateTransparencyLoggingPreference: String
       DomainName: !Ref Domain
       DomainValidationOptions: 
-        - DomainValidationOption
-      SubjectAlternativeNames: 
-        - String
+        - DomainName: !Ref Domain
+          HostedZoneId: !Ref HostedZone
+      # SubjectAlternativeNames: 
+      #   - String
       ValidationMethod: DNS
   # WebSocketAuth:
   #   Type: AWS::ApiGatewayV2::Authorizer
@@ -155,7 +154,7 @@ Resources:
     Properties:
       DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       DomainNameConfigurations:
-        - CertificateArn: !Ref CertArn
+        - CertificateArn: !Ref Certificate
           EndpointType: REGIONAL
   WebSocketRecord:
     Type: AWS::Route53::RecordSet
@@ -255,7 +254,7 @@ Resources:
       StageName: !Ref Stage
       Domain:
         DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], !Ref Domain ] ]
-        CertificateArn: !Ref CertArn
+        CertificateArn: !Ref Certificate
         EndpointConfiguration: EDGE
         Route53:
           HostedZoneId: !Ref HostedZone
