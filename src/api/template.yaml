@@ -66,6 +66,9 @@ Parameters:
   RH2FA2:
     Type: "String"
     NoEcho: true
+  HostedZoneId:
+    Type: "String"
+    NoEcho: true
 
 Globals:
   Function:
@@ -87,16 +90,17 @@ Resources:
         Name: !Sub "ws-api-${Stage}"
         ProtocolType: WEBSOCKET
         RouteSelectionExpression: "$request.body.action"
-  Certificate:
-    Type: AWS::CertificateManager::Certificate
-    Properties:
-      DomainName: !Ref Domain
-      DomainValidationOptions: 
-        - DomainName: !Ref Domain
-          HostedZoneId: !Ref HostedZone
-      # SubjectAlternativeNames: 
-      #   - String
-      ValidationMethod: DNS
+  # Certificate:
+  #   Type: AWS::CertificateManager::Certificate
+  #   DependsOn: HostedZone
+  #   Properties:
+  #     DomainName: !Ref Domain
+  #     DomainValidationOptions: 
+  #       - DomainName: !Ref Domain
+  #         HostedZoneId: !Ref HostedZone
+  #     # SubjectAlternativeNames: 
+  #     #   - String
+  #     ValidationMethod: DNS
   # WebSocketAuth:
   #   Type: AWS::ApiGatewayV2::Authorizer
   #   Properties:
@@ -166,7 +170,7 @@ Resources:
         DNSName: !GetAtt WebSocketDomain.RegionalDomainName
         # EvaluateTargetHealth: Boolean
         HostedZoneId: !GetAtt WebSocketDomain.RegionalHostedZoneId
-      HostedZoneId: !Ref HostedZone
+      HostedZoneId: !Ref HostedZoneId
   WebSocketMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
     DependsOn: WebSocketDomain
@@ -257,7 +261,7 @@ Resources:
         CertificateArn: !Ref Certificate
         EndpointConfiguration: EDGE
         Route53:
-          HostedZoneId: !Ref HostedZone
+          HostedZoneId: !Ref HostedZoneId
       Auth:
         Authorizers:
           CognitoAuth:
