@@ -158,7 +158,8 @@ Resources:
     Properties:
       DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       DomainNameConfigurations:
-        - CertificateArn: !Ref Certificate
+      # replace with cf gen cert
+        - CertificateArn: !Ref CertArn
           EndpointType: REGIONAL
   WebSocketRecord:
     Type: AWS::Route53::RecordSet
@@ -170,6 +171,7 @@ Resources:
         DNSName: !GetAtt WebSocketDomain.RegionalDomainName
         # EvaluateTargetHealth: Boolean
         HostedZoneId: !GetAtt WebSocketDomain.RegionalHostedZoneId
+        # replace w cf gen hostedzone
       HostedZoneId: !Ref HostedZoneId
   WebSocketMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
@@ -258,9 +260,11 @@ Resources:
       StageName: !Ref Stage
       Domain:
         DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], !Ref Domain ] ]
-        CertificateArn: !Ref Certificate
+        # replace with cf gen cert
+        CertificateArn: !Ref CertArn
         EndpointConfiguration: EDGE
         Route53:
+        # replace with cf gen hostedzone
           HostedZoneId: !Ref HostedZoneId
       Auth:
         Authorizers:
