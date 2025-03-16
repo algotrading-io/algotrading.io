@@ -87,6 +87,20 @@ Resources:
         Name: !Sub "ws-api-${Stage}"
         ProtocolType: WEBSOCKET
         RouteSelectionExpression: "$request.body.action"
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      CertificateAuthorityArn: String
+      CertificateTransparencyLoggingPreference: String
+      DomainName: String
+      DomainValidationOptions: 
+        - DomainValidationOption
+      KeyAlgorithm: String
+      SubjectAlternativeNames: 
+        - String
+      Tags: 
+        - Tag
+      ValidationMethod: String
   # WebSocketAuth:
   #   Type: AWS::ApiGatewayV2::Authorizer
   #   Properties:
