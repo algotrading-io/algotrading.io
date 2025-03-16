@@ -15,9 +15,6 @@ Parameters:
   CertArn:
     Type: "String"
     NoEcho: true
-  HostedZoneId:
-    Type: "String"
-    NoEcho: true
   UserPoolArn:
     Type: "String"
     NoEcho: true
@@ -80,7 +77,7 @@ Conditions:
     !Equals [!Ref Stage, prod]
 
 Resources:
-  DNS: 
+  HostedZone: 
     Type: "AWS::Route53::HostedZone"
     Properties: 
       Name: !Ref Domain
@@ -126,8 +123,7 @@ Resources:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketFunction.Arn}/invocations
   WebSocketDeployment:
     Type: AWS::ApiGatewayV2::Deployment
-    DependsOn:
-    - WebSocketRoute
+    DependsOn: WebSocketRoute
     Properties:
       ApiId: !Ref WebSocketApi
   WebSocketStage:
@@ -146,7 +142,7 @@ Resources:
   WebSocketDomain:
     Type: AWS::ApiGatewayV2::DomainName
     Properties:
-      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       DomainNameConfigurations:
         - CertificateArn: !Ref CertArn
           EndpointType: REGIONAL
@@ -154,19 +150,19 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       Type: A
-      Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      DependsOn: HostedZone
+      Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       AliasTarget:
         DNSName: !GetAtt WebSocketDomain.RegionalDomainName
         # EvaluateTargetHealth: Boolean
         HostedZoneId: !GetAtt WebSocketDomain.RegionalHostedZoneId
-      HostedZoneId: !Ref HostedZoneId
+      HostedZoneId: !Ref HostedZone
   WebSocketMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
-    DependsOn:
-    - WebSocketDomain
+    DependsOn: WebSocketDomain
     Properties:
       ApiId: !Ref WebSocketApi
-      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       Stage: !Ref WebSocketStage
   WebSocketFunction:
     Type: AWS::Serverless::Function
@@ -224,8 +220,7 @@ Resources:
       #     - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SimpleChatWebSocket}/*'
   WebSocketPermission:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - WebSocketApi
+    DependsOn: WebSocketApi
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref WebSocketFunction
@@ -244,14 +239,15 @@ Resources:
   #     #   - AmazonAPIGatewayAdministrator
   ApiGatewayApi:
     Type: AWS::Serverless::Api
+    DependsOn: HostedZone
     Properties:
       StageName: !Ref Stage
       Domain:
-        DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+        DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], !Ref Domain ] ]
         CertificateArn: !Ref CertArn
         EndpointConfiguration: EDGE
         Route53:
-          HostedZoneId: !Ref HostedZoneId
+          HostedZoneId: !Ref HostedZone
       Auth:
         Authorizers:
           CognitoAuth:
@@ -260,7 +256,7 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Properties:
       LayerName: !Sub "${Stage}_shared_layer"
-      Description: shared api code layer for forcepu.sh
+      Description: shared api code layer
       ContentUri: shared
       RetentionPolicy: Delete
   AccountFunction:
