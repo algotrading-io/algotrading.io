@@ -95,11 +95,8 @@ Resources:
       DomainName: String
       DomainValidationOptions: 
         - DomainValidationOption
-      KeyAlgorithm: String
       SubjectAlternativeNames: 
         - String
-      Tags: 
-        - Tag
       ValidationMethod: String
   # WebSocketAuth:
   #   Type: AWS::ApiGatewayV2::Authorizer
