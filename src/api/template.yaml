@@ -90,17 +90,19 @@ Resources:
         Name: !Sub "ws-api-${Stage}"
         ProtocolType: WEBSOCKET
         RouteSelectionExpression: "$request.body.action"
-  # Certificate:
-  #   Type: AWS::CertificateManager::Certificate
-  #   DependsOn: HostedZone
-  #   Properties:
-  #     DomainName: !Ref Domain
-  #     DomainValidationOptions: 
-  #       - DomainName: !Ref Domain
-  #         HostedZoneId: !Ref HostedZone
-  #     # SubjectAlternativeNames: 
-  #     #   - String
-  #     ValidationMethod: DNS
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    DependsOn: HostedZone
+    Properties:
+      DomainName: !Ref Domain
+      SubjectAlternativeNames:
+        - !Sub "*.${Domain}"
+      DomainValidationOptions:
+        - DomainName: !Ref Domain
+          HostedZoneId: !Ref HostedZone
+        - DomainName: !Sub "*.${Domain}"
+          HostedZoneId: !Ref HostedZone
+      ValidationMethod: DNS
   # WebSocketAuth:
   #   Type: AWS::ApiGatewayV2::Authorizer
   #   Properties:
