@@ -2,6 +2,8 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
+  Domain:
+    Type: "String"
   S3Bucket:
     Type: "String"
     NoEcho: true
@@ -78,6 +80,10 @@ Conditions:
     !Equals [!Ref Stage, prod]
 
 Resources:
+  DNS: 
+    Type: "AWS::Route53::HostedZone"
+    Properties: 
+      Name: !Ref Domain
   WebSocketApi:
       Type: AWS::ApiGatewayV2::Api
       Properties:
