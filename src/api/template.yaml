@@ -77,7 +77,11 @@ Resources:
   UIBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      AccessControl: PublicRead
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
       BucketName: !Join [ "", [!If [IsProd, "", "dev."], !Ref Domain ] ]
       WebsiteConfiguration:
         IndexDocument: index.html

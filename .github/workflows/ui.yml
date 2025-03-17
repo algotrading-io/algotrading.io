@@ -70,7 +70,7 @@ jobs:
           util/aws_exports.sh
           pnpm run swagger
 
-      - name: Build app
+      - name: Build app [${{ fromJSON('["dev","prod"]')[github.ref_name == 'master'] }}]
         run: pnpm run build:ui && echo "AWS_S3_BUCKET=${AWS_S3_BUCKET}" >> $GITHUB_ENV && echo "CF_DISTRO_ID=${CF_DISTRO_ID}" >> $GITHUB_ENV
         env:
           AWS_S3_BUCKET: ${{ fromJSON(format('["{0}","{1}"]', secrets.FORCEPUSH_DEV_BUCKET, secrets.FORCEPUSH_BUCKET))[github.ref_name == 'master'] }}
