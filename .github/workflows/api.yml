@@ -84,8 +84,6 @@ jobs:
           StripeWebhookSecret: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_STRIPE_WEBHOOK_SECRET, secrets.STRIPE_WEBHOOK_SECRET))[github.ref_name == 'master'] }}
           S3Bucket: ${{ fromJSON(format('["{0}","{1}"]', secrets.HYPERDRIVE_DEV_BUCKET, secrets.HYPERDRIVE_BUCKET))[github.ref_name == 'master'] }}
           Stage: ${{ fromJSON(format('["{0}","{1}"]', 'dev', 'prod'))[github.ref_name == 'master'] }}
-          CertArn: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_CERT_ARN, secrets.CERT_ARN))[github.ref_name == 'master'] }}
-          HostedZoneId: ${{ secrets.HOSTED_ZONE_ID }}
           UserPoolArn: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_USER_POOL_ARN, secrets.USER_POOL_ARN))[github.ref_name == 'master'] }}
           UserPoolId: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_USER_POOL_ID, secrets.USER_POOL_ID))[github.ref_name == 'master'] }}
           WebClientId: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_WEB_CLIENT_ID, secrets.WEB_CLIENT_ID))[github.ref_name == 'master'] }}
@@ -109,8 +107,6 @@ jobs:
           StripeWebhookSecret=${StripeWebhookSecret}
           S3Bucket=${S3Bucket}
           Stage=${Stage}
-          CertArn=${CertArn}
-          HostedZoneId=${HostedZoneId}
           UserPoolId=${UserPoolId}
           WebClientId=${WebClientId}
           UserPoolArn=${UserPoolArn}

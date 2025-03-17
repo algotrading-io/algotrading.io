@@ -12,9 +12,6 @@ Parameters:
     AllowedValues:
       - dev
       - prod
-  CertArn:
-    Type: "String"
-    NoEcho: true
   UserPoolArn:
     Type: "String"
     NoEcho: true
@@ -66,9 +63,6 @@ Parameters:
   RH2FA2:
     Type: "String"
     NoEcho: true
-  HostedZoneId:
-    Type: "String"
-    NoEcho: true
 
 Globals:
   Function:
@@ -80,6 +74,17 @@ Conditions:
     !Equals [!Ref Stage, prod]
 
 Resources:
+  UIBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+      BucketName: !Join [ "", [!If [IsProd, "", "dev."], !Ref Domain ] ]
+      WebsiteConfiguration:
+        IndexDocument: index.html
   HostedZone: 
     Type: "AWS::Route53::HostedZone"
     Properties: 
@@ -156,34 +161,27 @@ Resources:
   WebSocketDomain:
     Type: AWS::ApiGatewayV2::DomainName
     Properties:
-      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
-      # DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
+      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       DomainNameConfigurations:
-      # replace with cf gen cert
-        - CertificateArn: !Ref CertArn
-        # - CertificateArn: !Ref Certificate
+        - CertificateArn: !Ref Certificate
           EndpointType: REGIONAL
   WebSocketRecord:
     Type: AWS::Route53::RecordSet
     DependsOn: HostedZone
     Properties:
       Type: A
-      Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
-      # Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
+      Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       AliasTarget:
         DNSName: !GetAtt WebSocketDomain.RegionalDomainName
         # EvaluateTargetHealth: Boolean
         HostedZoneId: !GetAtt WebSocketDomain.RegionalHostedZoneId
-        # replace w cf gen hostedzone
-      # HostedZoneId: !Ref HostedZone
-      HostedZoneId: !Ref HostedZoneId
+      HostedZoneId: !Ref HostedZone
   WebSocketMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
     DependsOn: WebSocketDomain
     Properties:
       ApiId: !Ref WebSocketApi
-      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
-      # DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
+      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       Stage: !Ref WebSocketStage
   WebSocketFunction:
     Type: AWS::Serverless::Function
@@ -264,16 +262,11 @@ Resources:
     Properties:
       StageName: !Ref Stage
       Domain:
-        DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], forcepu.sh ] ]
-        # DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], !Ref Domain ] ]
-        # replace with cf gen cert
-        CertificateArn: !Ref CertArn
-        # CertificateArn: !Ref Certificate
+        DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], !Ref Domain ] ]
+        CertificateArn: !Ref Certificate
         EndpointConfiguration: EDGE
         Route53:
-        # replace with cf gen hostedzone
-          # HostedZoneId: !Ref HostedZone
-          HostedZoneId: !Ref HostedZoneId
+          HostedZoneId: !Ref HostedZone
       Auth:
         Authorizers:
           CognitoAuth:
@@ -749,3 +742,6 @@ Resources:
             ProjectionType: ALL
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+Outputs:
+  UIBucketName:
+    Value: !Ref UIBucket
