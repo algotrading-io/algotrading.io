@@ -84,6 +84,8 @@ Resources:
     Type: "AWS::Route53::HostedZone"
     Properties: 
       Name: !Ref Domain
+      HostedZoneConfig:
+        Comment: !Sub "hosted zone for ${Stage}"
   WebSocketApi:
       Type: AWS::ApiGatewayV2::Api
       Properties:
