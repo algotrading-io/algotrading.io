@@ -156,34 +156,34 @@ Resources:
   WebSocketDomain:
     Type: AWS::ApiGatewayV2::DomainName
     Properties:
-      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
-      # DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
+      # DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       DomainNameConfigurations:
       # replace with cf gen cert
-        - CertificateArn: !Ref CertArn
-        # - CertificateArn: !Ref Certificate
+        # - CertificateArn: !Ref CertArn
+        - CertificateArn: !Ref Certificate
           EndpointType: REGIONAL
   WebSocketRecord:
     Type: AWS::Route53::RecordSet
     DependsOn: HostedZone
     Properties:
       Type: A
-      Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
-      # Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
+      # Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       AliasTarget:
         DNSName: !GetAtt WebSocketDomain.RegionalDomainName
         # EvaluateTargetHealth: Boolean
         HostedZoneId: !GetAtt WebSocketDomain.RegionalHostedZoneId
         # replace w cf gen hostedzone
-      # HostedZoneId: !Ref HostedZone
-      HostedZoneId: !Ref HostedZoneId
+      HostedZoneId: !Ref HostedZone
+      # HostedZoneId: !Ref HostedZoneId
   WebSocketMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
     DependsOn: WebSocketDomain
     Properties:
       ApiId: !Ref WebSocketApi
-      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
-      # DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
+      # DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       Stage: !Ref WebSocketStage
   WebSocketFunction:
     Type: AWS::Serverless::Function
@@ -264,16 +264,16 @@ Resources:
     Properties:
       StageName: !Ref Stage
       Domain:
-        DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], forcepu.sh ] ]
-        # DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], !Ref Domain ] ]
+        # DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+        DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], !Ref Domain ] ]
         # replace with cf gen cert
-        CertificateArn: !Ref CertArn
-        # CertificateArn: !Ref Certificate
+        # CertificateArn: !Ref CertArn
+        CertificateArn: !Ref Certificate
         EndpointConfiguration: EDGE
         Route53:
         # replace with cf gen hostedzone
-          # HostedZoneId: !Ref HostedZone
-          HostedZoneId: !Ref HostedZoneId
+          HostedZoneId: !Ref HostedZone
+          # HostedZoneId: !Ref HostedZoneId
       Auth:
         Authorizers:
           CognitoAuth:
