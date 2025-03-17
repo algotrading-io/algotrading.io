@@ -71,9 +71,8 @@ jobs:
           pnpm run swagger
 
       - name: Build app [${{ fromJSON('["dev","prod"]')[github.ref_name == 'master'] }}]
-        run: pnpm run build:ui && echo "AWS_S3_BUCKET=${AWS_S3_BUCKET}" >> $GITHUB_ENV && echo "CF_DISTRO_ID=${CF_DISTRO_ID}" >> $GITHUB_ENV
+        run: pnpm run build:ui && echo "CF_DISTRO_ID=${CF_DISTRO_ID}" >> $GITHUB_ENV
         env:
-          AWS_S3_BUCKET: ${{ fromJSON(format('["{0}","{1}"]', secrets.FORCEPUSH_DEV_BUCKET, secrets.FORCEPUSH_BUCKET))[github.ref_name == 'master'] }}
           VITE_APP_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           VITE_APP_IDENTITY_POOL_ID: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_IDENTITY_POOL_ID, secrets.IDENTITY_POOL_ID))[github.ref_name == 'master'] }}
           VITE_APP_USER_POOL_ID: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_USER_POOL_ID, secrets.USER_POOL_ID))[github.ref_name == 'master'] }}
@@ -82,6 +81,15 @@ jobs:
           CF_DISTRO_ID: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_CF_DISTRO_ID, secrets.CF_DISTRO_ID))[github.ref_name == 'master'] }}
           VITE_COVERAGE: ${{ fromJSON(format('["{0}","{1}"]', true, false))[github.ref_name == 'master'] }}
 
+      - name: Get CF Outputs
+        run: |
+          AWS_S3_BUCKET=$(aws cloudformation describe-stacks --stack-name api-dev --query 'Stacks[0].Outputs[?OutputKey==`UIBucketName`].OutputValue' --output text)
+          echo "AWS_S3_BUCKET=${AWS_S3_BUCKET}" >> $GITHUB_ENV
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          STACK_NAME: ${{ fromJSON(format('["{0}","{1}"]', 'api-dev', 'api'))[github.ref_name == 'master'] }}
+      
       - name: Deploy UI
         run: aws s3 sync dist s3://${{ env.AWS_S3_BUCKET }} --acl public-read --follow-symlinks --delete
         env:
