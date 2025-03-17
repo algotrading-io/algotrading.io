@@ -2,6 +2,8 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
+  Domain:
+    Type: "String"
   S3Bucket:
     Type: "String"
     NoEcho: true
@@ -11,9 +13,6 @@ Parameters:
       - dev
       - prod
   CertArn:
-    Type: "String"
-    NoEcho: true
-  HostedZoneId:
     Type: "String"
     NoEcho: true
   UserPoolArn:
@@ -67,6 +66,9 @@ Parameters:
   RH2FA2:
     Type: "String"
     NoEcho: true
+  HostedZoneId:
+    Type: "String"
+    NoEcho: true
 
 Globals:
   Function:
@@ -78,12 +80,27 @@ Conditions:
     !Equals [!Ref Stage, prod]
 
 Resources:
+  HostedZone: 
+    Type: "AWS::Route53::HostedZone"
+    Properties: 
+      Name: !Join [ "", [!If [IsProd, "", "dev."], !Ref Domain ] ]
   WebSocketApi:
       Type: AWS::ApiGatewayV2::Api
       Properties:
         Name: !Sub "ws-api-${Stage}"
         ProtocolType: WEBSOCKET
         RouteSelectionExpression: "$request.body.action"
+  # Certificate:
+  #   Type: AWS::CertificateManager::Certificate
+  #   DependsOn: HostedZone
+  #   Properties:
+  #     DomainName: !Join [ "", [!If [IsProd, "", "dev."], !Ref Domain ] ]
+  #     SubjectAlternativeNames:
+  #       - !Join [ "", ["*.", !If [IsProd, "", "dev."], !Ref Domain ] ]
+  #     DomainValidationOptions:
+  #       - DomainName: !Join [ "", [!If [IsProd, "", "dev."], !Ref Domain ] ]
+  #         HostedZoneId: !Ref HostedZone
+  #     ValidationMethod: DNS
   # WebSocketAuth:
   #   Type: AWS::ApiGatewayV2::Authorizer
   #   Properties:
@@ -120,8 +137,7 @@ Resources:
             arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WebSocketFunction.Arn}/invocations
   WebSocketDeployment:
     Type: AWS::ApiGatewayV2::Deployment
-    DependsOn:
-    - WebSocketRoute
+    DependsOn: WebSocketRoute
     Properties:
       ApiId: !Ref WebSocketApi
   WebSocketStage:
@@ -141,26 +157,33 @@ Resources:
     Type: AWS::ApiGatewayV2::DomainName
     Properties:
       DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      # DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       DomainNameConfigurations:
+      # replace with cf gen cert
         - CertificateArn: !Ref CertArn
+        # - CertificateArn: !Ref Certificate
           EndpointType: REGIONAL
   WebSocketRecord:
     Type: AWS::Route53::RecordSet
+    DependsOn: HostedZone
     Properties:
       Type: A
       Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      # Name: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       AliasTarget:
         DNSName: !GetAtt WebSocketDomain.RegionalDomainName
         # EvaluateTargetHealth: Boolean
         HostedZoneId: !GetAtt WebSocketDomain.RegionalHostedZoneId
+        # replace w cf gen hostedzone
+      # HostedZoneId: !Ref HostedZone
       HostedZoneId: !Ref HostedZoneId
   WebSocketMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
-    DependsOn:
-    - WebSocketDomain
+    DependsOn: WebSocketDomain
     Properties:
       ApiId: !Ref WebSocketApi
       DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+      # DomainName: !Join [ "", ["api2.", !If [IsProd, "", "dev."], !Ref Domain ] ]
       Stage: !Ref WebSocketStage
   WebSocketFunction:
     Type: AWS::Serverless::Function
@@ -218,8 +241,7 @@ Resources:
       #     - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${SimpleChatWebSocket}/*'
   WebSocketPermission:
     Type: AWS::Lambda::Permission
-    DependsOn:
-      - WebSocketApi
+    DependsOn: WebSocketApi
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref WebSocketFunction
@@ -238,13 +260,19 @@ Resources:
   #     #   - AmazonAPIGatewayAdministrator
   ApiGatewayApi:
     Type: AWS::Serverless::Api
+    DependsOn: HostedZone
     Properties:
       StageName: !Ref Stage
       Domain:
         DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], forcepu.sh ] ]
+        # DomainName: !Join [ "", ["api.", !If [IsProd, "", "dev."], !Ref Domain ] ]
+        # replace with cf gen cert
         CertificateArn: !Ref CertArn
+        # CertificateArn: !Ref Certificate
         EndpointConfiguration: EDGE
         Route53:
+        # replace with cf gen hostedzone
+          # HostedZoneId: !Ref HostedZone
           HostedZoneId: !Ref HostedZoneId
       Auth:
         Authorizers:
@@ -254,7 +282,7 @@ Resources:
     Type: AWS::Serverless::LayerVersion
     Properties:
       LayerName: !Sub "${Stage}_shared_layer"
-      Description: shared api code layer for forcepu.sh
+      Description: shared api code layer
       ContentUri: shared
       RetentionPolicy: Delete
   AccountFunction:
