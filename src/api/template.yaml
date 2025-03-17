@@ -738,3 +738,6 @@ Resources:
             ProjectionType: ALL
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+Outputs:
+  UIBucketName:
+    Value: !Ref UIBucket
