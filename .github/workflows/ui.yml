@@ -70,30 +70,17 @@ jobs:
           util/aws_exports.sh
           pnpm run swagger
 
-      - name: Build app [dev]
+      - name: Build app
         run: pnpm run build:ui && echo "AWS_S3_BUCKET=${AWS_S3_BUCKET}" >> $GITHUB_ENV && echo "CF_DISTRO_ID=${CF_DISTRO_ID}" >> $GITHUB_ENV
         env:
-          AWS_S3_BUCKET: ${{ secrets.FORCEPUSH_DEV_BUCKET }}
+          AWS_S3_BUCKET: ${{ fromJSON(format('["{0}","{1}"]', secrets.FORCEPUSH_DEV_BUCKET, secrets.FORCEPUSH_BUCKET))[github.ref_name == 'master'] }}
           VITE_APP_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          VITE_APP_IDENTITY_POOL_ID: ${{ secrets.DEV_IDENTITY_POOL_ID }}
-          VITE_APP_USER_POOL_ID: ${{ secrets.DEV_USER_POOL_ID }}
-          VITE_APP_WEB_CLIENT_ID: ${{ secrets.DEV_WEB_CLIENT_ID }}
-          VITE_APP_OAUTH_DOMAIN: ${{ secrets.DEV_OAUTH_DOMAIN }}
-          CF_DISTRO_ID: ${{ secrets.DEV_CF_DISTRO_ID }}
-          VITE_COVERAGE: true
-        if: ${{ github.ref_name != 'master' }}
-
-      - name: Build app [prod]
-        run: pnpm run build:ui && echo "AWS_S3_BUCKET=${AWS_S3_BUCKET}" >> $GITHUB_ENV && echo "CF_DISTRO_ID=${CF_DISTRO_ID}" >> $GITHUB_ENV
-        env:
-          AWS_S3_BUCKET: ${{ secrets.FORCEPUSH_BUCKET }}
-          VITE_APP_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          VITE_APP_IDENTITY_POOL_ID: ${{ secrets.IDENTITY_POOL_ID }}
-          VITE_APP_USER_POOL_ID: ${{ secrets.USER_POOL_ID }}
-          VITE_APP_WEB_CLIENT_ID: ${{ secrets.WEB_CLIENT_ID }}
-          VITE_APP_OAUTH_DOMAIN: ${{ secrets.OAUTH_DOMAIN }}
-          CF_DISTRO_ID: ${{ secrets.CF_DISTRO_ID }}
-        if: ${{ github.ref_name == 'master' }}
+          VITE_APP_IDENTITY_POOL_ID: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_IDENTITY_POOL_ID, secrets.IDENTITY_POOL_ID))[github.ref_name == 'master'] }}
+          VITE_APP_USER_POOL_ID: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_USER_POOL_ID, secrets.USER_POOL_ID))[github.ref_name == 'master'] }}
+          VITE_APP_WEB_CLIENT_ID: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_WEB_CLIENT_ID, secrets.WEB_CLIENT_ID))[github.ref_name == 'master'] }}
+          VITE_APP_OAUTH_DOMAIN: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_OAUTH_DOMAIN, secrets.OAUTH_DOMAIN))[github.ref_name == 'master'] }}
+          CF_DISTRO_ID: ${{ fromJSON(format('["{0}","{1}"]', secrets.DEV_CF_DISTRO_ID, secrets.CF_DISTRO_ID))[github.ref_name == 'master'] }}
+          VITE_COVERAGE: ${{ fromJSON(format('["{0}","{1}"]', true, false))[github.ref_name == 'master'] }}
 
       - name: Deploy UI
         run: aws s3 sync dist s3://${{ env.AWS_S3_BUCKET }} --acl public-read --follow-symlinks --delete
