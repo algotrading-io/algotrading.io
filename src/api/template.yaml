@@ -80,6 +80,13 @@ Conditions:
     !Equals [!Ref Stage, prod]
 
 Resources:
+  UIBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Join [ "", [!If [IsProd, "", "dev."], !Ref Domain ] ]
+      WebsiteConfiguration:
+        IndexDocument: index.html
   HostedZone: 
     Type: "AWS::Route53::HostedZone"
     Properties: 
